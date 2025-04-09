@@ -4,6 +4,7 @@ import tripletriad.model.Carta;
 import tripletriad.model.Jogador;
 import tripletriad.model.Tabuleiro;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
@@ -112,16 +113,41 @@ public class Jogo {
             Jogador atual = getJogadorAtual();
             System.out.println("\nVez de " + atual.getNome());
 
-            // Mostra as cartas na mão
+//             Mostra as cartas na mão
+//            List<Carta> cartas = atual.getCartasNaMao();
+//            for (int i = 0; i < cartas.size(); i++) {
+//                Carta carta = cartas.get(i);
+//                String[] visual = carta.toStringVisual();
+//                System.out.println("[" + i + "] " + carta.getNome() + " - " + carta.getTipo());
+//                for (String linha : visual) {
+//                    System.out.println("    " + linha);
+//                }
+//            }
+
             List<Carta> cartas = atual.getCartasNaMao();
+
+// 1. Exibe os nomes e tipos em uma linha
             for (int i = 0; i < cartas.size(); i++) {
                 Carta carta = cartas.get(i);
-                String[] visual = carta.toStringVisual();
-                System.out.println("[" + i + "] " + carta.getNome() + " - " + carta.getTipo());
-                for (String linha : visual) {
-                    System.out.println("    " + linha);
-                }
+                String titulo = String.format("[%d] %s - %s", i, carta.getNome(), carta.getTipo());
+                System.out.printf("%-25s", titulo); // Largura fixa pra alinhar
             }
+            System.out.println(); // Quebra de linha
+
+// 2. Pega visual de todas as cartas
+            String[][] visuais = new String[cartas.size()][];
+            for (int i = 0; i < cartas.size(); i++) {
+                visuais[i] = cartas.get(i).toStringVisual();
+            }
+
+// 3. Exibe linha por linha horizontalmente
+            for (int linha = 0; linha < 5; linha++) {
+                for (int i = 0; i < cartas.size(); i++) {
+                    System.out.printf("%-25s", visuais[i][linha]); // Largura fixa também
+                }
+                System.out.println();
+            }
+
 
             // Escolher carta
             int indiceCarta = -1;

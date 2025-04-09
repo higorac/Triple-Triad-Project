@@ -26,7 +26,7 @@ public class Carta {
     public String[] toStringVisual() {
         String linha1 = "+-----+";
         String linha2 = String.format("|  %s  |", verificandoPontosCartas(topo));
-        String linha3 = String.format("|%s %s|", verificandoPontosCartas(esquerda), verificandoPontosCartas(direita));
+        String linha3 = String.format("|%s   %s|", verificandoPontosCartas(esquerda), verificandoPontosCartas(direita));
         String linha4 = String.format("|  %s  |", verificandoPontosCartas(baixo));
         String linha5 = "+-----+";
 
