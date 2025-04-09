@@ -1,4 +1,4 @@
-package tripletriad;
+package tripletriad.model;
 
 public class Tabuleiro {
 }
