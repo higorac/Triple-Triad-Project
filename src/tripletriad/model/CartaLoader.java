@@ -19,7 +19,7 @@ public class CartaLoader {
                 linha = linha.trim();
                 if (linha.isEmpty()) continue;
 
-                String[] partes = linha.split(";");
+                String[] partes = linha.split("[;,]");
                 for (String parte : partes) {
                     System.out.println(parte);
                 }
