@@ -19,11 +19,15 @@ public class Carta {
         this.dono = dono;
     }
 
+    public String verificandoPontosCartas(int ponto) {
+        return ponto == 10 ? "A" : String.valueOf(ponto);
+    }
+
     public String[] toStringVisual() {
         String linha1 = "+-----+";
-        String linha2 = String.format("|  %s  |", String.valueOf(tipo.charAt(0)));
-        String linha3 = String.format("|%s %s|", String.valueOf(esquerda), String.valueOf(direita));
-        String linha4 = String.format("|  %s  |", String.valueOf(baixo));
+        String linha2 = String.format("|  %s  |", verificandoPontosCartas(topo));
+        String linha3 = String.format("|%s %s|", verificandoPontosCartas(esquerda), verificandoPontosCartas(direita));
+        String linha4 = String.format("|  %s  |", verificandoPontosCartas(baixo));
         String linha5 = "+-----+";
 
         return new String[]{linha1, linha2, linha3, linha4, linha5};

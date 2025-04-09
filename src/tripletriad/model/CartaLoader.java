@@ -25,10 +25,6 @@ public class CartaLoader {
                         .replaceAll(match -> "[" + match.group(1).replace(";", ",") + "]");
 
                 String[] partes = linha.split(";");
-                for (String parte : partes) {
-                    System.out.println(parte);
-                }
-                System.out.println();
 
                 if (partes.length < 4) {
                     System.out.println("Formato de linha inválido: " + linha);

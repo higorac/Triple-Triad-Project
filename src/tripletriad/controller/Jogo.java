@@ -24,9 +24,11 @@ public class Jogo {
         jogador2.setPontuacao(5);
     }
 
-    public void jogarCarta(int linha, int coluna, Carta carta) {
+    public void jogarCarta(int linha, int coluna, Carta carta, int indiceCarta) {
         if (!tabuleiro.colocarCarta(linha, coluna, carta)) {
             System.out.println("Posição ocupada. Tente outra.");
+            Jogador jogadorAtual = getJogadorAtual();
+            jogadorAtual.getCartasNaMao().add(indiceCarta, carta);
             return;
         }
 
@@ -147,7 +149,7 @@ public class Jogo {
                     coluna = Integer.parseInt(scanner.nextLine());
 
                     // Usa o método jogarCarta aqui:
-                    jogarCarta(linha, coluna, cartaEscolhida);
+                    jogarCarta(linha, coluna, cartaEscolhida, indiceCarta);
                     jogadaValida = true;
                 } catch (Exception e) {
                     System.out.println("Erro ao tentar jogar a carta. Tente novamente.");
