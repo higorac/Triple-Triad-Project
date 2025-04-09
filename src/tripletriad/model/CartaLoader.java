@@ -20,18 +20,30 @@ public class CartaLoader {
                 if (linha.isEmpty()) continue;
 
                 String[] partes = linha.split(";");
+                for (String parte : partes) {
+                    System.out.println(parte);
+                }
+                System.out.println();
+
                 if (partes.length < 4) {
                     System.out.println("Formato de linha inválido: " + linha);
                     continue;
                 }
 
                 try {
-                    String tipo = partes[1].trim();
-                    String atributos = partes[2].trim().replace("[", "").replace("]", "");
+
+                    String nome = partes[1].trim();
+                    String tipo = partes[4].trim();
+                    String atributos = partes[2].trim();
+                    System.out.println("atributos: " + atributos);
 
                     int topo = -1, direita = -1, baixo = -1, esquerda = -1;
 
                     String[] pares = atributos.split("[;,]");
+                    for (int i = 0; i < pares.length; i++) {
+                        System.out.println("[" + i + "] " + pares[i] + " - " + tipo);
+                    }
+                    System.out.println();
                     for (String par : pares) {
                         String[] kv = par.trim().split(":");
                         if (kv.length != 2) continue;
@@ -46,12 +58,13 @@ public class CartaLoader {
                         }
                     }
 
-                    if (topo == -1 || direita == -1 || baixo == -1 || esquerda == -1) {
-                        System.out.println("Atributos incompletos: " + linha);
-                        continue;
-                    }
+//                    if (topo == -1 || direita == -1 || baixo == -1 || esquerda == -1) {
+//                        System.out.println("direita = " + direita);
+//                        System.out.println("Atributos incompletos: " + linha);
+//                        continue;
+//                    }
 
-                    cartas.add(new Carta(topo, direita, baixo, esquerda, tipo, null));
+                    cartas.add(new Carta(nome, topo, direita, baixo, esquerda, tipo, null));
 
                 } catch (NumberFormatException e) {
                     System.out.println("Erro ao converter linha para inteiro: " + linha);

@@ -1,6 +1,7 @@
 package tripletriad.model;
 
 public class Carta {
+    private String nome;
     private int topo;
     private int direita;
     private int baixo;
@@ -8,7 +9,8 @@ public class Carta {
     private String tipo;
     private Jogador dono;
 
-    public Carta(int topo, int direita, int baixo, int esquerda, String tipo, Jogador dono) {
+    public Carta(String nome,int topo, int direita, int baixo, int esquerda, String tipo, Jogador dono) {
+        this.nome = nome;
         this.topo = topo;
         this.direita = direita;
         this.baixo = baixo;
@@ -34,6 +36,8 @@ public class Carta {
 
     public Jogador getDono() { return dono; }
     public void setDono(Jogador dono) { this.dono = dono; }
+
+    public String getNome() { return nome; }
 
     public String getTipo() {
         return tipo;

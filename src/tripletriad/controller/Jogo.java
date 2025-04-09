@@ -115,7 +115,7 @@ public class Jogo {
             for (int i = 0; i < cartas.size(); i++) {
                 Carta carta = cartas.get(i);
                 String[] visual = carta.toStringVisual();
-                System.out.println("[" + i + "] " + carta.getTipo());
+                System.out.println("[" + i + "] " + carta.getNome() + " - " + carta.getTipo());
                 for (String linha : visual) {
                     System.out.println("    " + linha);
                 }
