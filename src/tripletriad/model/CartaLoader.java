@@ -1,8 +1,6 @@
 package tripletriad.model;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -13,31 +11,60 @@ public class CartaLoader {
     public static void distribuirCartas(String caminhoCSV, Jogador j1, Jogador j2) {
         List<Carta> cartas = new ArrayList<>();
 
-        try (BufferedReader br = new BufferedReader(new FileReader(caminhoCSV))) {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(caminhoCSV), "UTF-16"))) {
             String linha;
             br.readLine(); // pula o cabeçalho
 
             while ((linha = br.readLine()) != null) {
-                String[] partes = linha.split(",");
+                linha = linha.trim();
+                if (linha.isEmpty()) continue;
 
-                int topo = Integer.parseInt(partes[0]);
-                int direita = Integer.parseInt(partes[1]);
-                int baixo = Integer.parseInt(partes[2]);
-                int esquerda = Integer.parseInt(partes[3]);
-                String tipo = partes[4];
+                String[] partes = linha.split(";");
+                if (partes.length < 4) {
+                    System.out.println("Formato de linha inválido: " + linha);
+                    continue;
+                }
 
-                cartas.add(new Carta(topo, direita, baixo, esquerda, tipo, null)); // dono será definido depois
+                try {
+                    String tipo = partes[1].trim();
+                    String atributos = partes[2].trim().replace("[", "").replace("]", "");
+
+                    int topo = -1, direita = -1, baixo = -1, esquerda = -1;
+
+                    String[] pares = atributos.split("[;,]");
+                    for (String par : pares) {
+                        String[] kv = par.trim().split(":");
+                        if (kv.length != 2) continue;
+                        String key = kv[0].trim().toUpperCase();
+                        int valor = Integer.parseInt(kv[1].trim());
+
+                        switch (key) {
+                            case "UP" -> topo = valor;
+                            case "RIGHT" -> direita = valor;
+                            case "DOWN" -> baixo = valor;
+                            case "LEFT" -> esquerda = valor;
+                        }
+                    }
+
+                    if (topo == -1 || direita == -1 || baixo == -1 || esquerda == -1) {
+                        System.out.println("Atributos incompletos: " + linha);
+                        continue;
+                    }
+
+                    cartas.add(new Carta(topo, direita, baixo, esquerda, tipo, null));
+
+                } catch (NumberFormatException e) {
+                    System.out.println("Erro ao converter linha para inteiro: " + linha);
+                }
             }
 
         } catch (IOException e) {
             System.out.println("Erro ao ler o arquivo: " + e.getMessage());
         }
 
-        // embaralha
         Collections.shuffle(cartas);
 
-        // distribui 5 pra cada jogador
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 5 && cartas.size() >= 2; i++) {
             Carta c1 = cartas.removeFirst();
             c1.setDono(j1);
             j1.adicionarCarta(c1);
@@ -47,5 +74,4 @@ public class CartaLoader {
             j2.adicionarCarta(c2);
         }
     }
-
 }
