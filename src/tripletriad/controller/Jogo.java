@@ -4,6 +4,9 @@ import tripletriad.model.Carta;
 import tripletriad.model.Jogador;
 import tripletriad.model.Tabuleiro;
 
+import java.util.List;
+import java.util.Scanner;
+
 public class Jogo {
     private Jogador jogador1;
     private Jogador jogador2;
@@ -98,4 +101,66 @@ public class Jogo {
             System.out.println("Empate!");
         }
     }
+
+    public void iniciar(Scanner scanner) {
+        while (!jogoFinalizado()) {
+            mostrarTabuleiro();
+            mostrarPlacar();
+
+            Jogador atual = getJogadorAtual();
+            System.out.println("\nVez de " + atual.getNome());
+
+            // Mostra as cartas na mão
+            List<Carta> cartas = atual.getCartasNaMao();
+            for (int i = 0; i < cartas.size(); i++) {
+                Carta carta = cartas.get(i);
+                String[] visual = carta.toStringVisual();
+                System.out.println("[" + i + "] " + carta.getTipo());
+                for (String linha : visual) {
+                    System.out.println("    " + linha);
+                }
+            }
+
+            // Escolher carta
+            int indiceCarta = -1;
+            while (indiceCarta < 0 || indiceCarta >= cartas.size()) {
+                System.out.print("Escolha o índice da carta que deseja jogar: ");
+                try {
+                    indiceCarta = Integer.parseInt(scanner.nextLine());
+                } catch (NumberFormatException e) {
+                    System.out.println("Digite um número válido.");
+                }
+            }
+            Carta cartaEscolhida = cartas.remove(indiceCarta);
+            cartaEscolhida.setDono(atual); // define o dono antes de jogar
+
+            // Escolher posição
+            int linha = -1, coluna = -1;
+            boolean jogadaValida = false;
+
+            while (!jogadaValida) {
+                try {
+                    System.out.print("Escolha a linha (0 a 2): ");
+                    linha = Integer.parseInt(scanner.nextLine());
+
+                    System.out.print("Escolha a coluna (0 a 2): ");
+                    coluna = Integer.parseInt(scanner.nextLine());
+
+                    // Usa o método jogarCarta aqui:
+                    jogarCarta(linha, coluna, cartaEscolhida);
+                    jogadaValida = true;
+                } catch (Exception e) {
+                    System.out.println("Erro ao tentar jogar a carta. Tente novamente.");
+                }
+            }
+
+            System.out.println("--------------------------------------------\n");
+        }
+
+        // Fim do jogo
+        mostrarTabuleiro();
+        mostrarPlacar();
+        mostrarVencedor();
+    }
+
 }
