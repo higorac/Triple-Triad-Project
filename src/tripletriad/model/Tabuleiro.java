@@ -16,21 +16,19 @@ public class Tabuleiro {
     }
 
     public void exibirTabuleiro() {
+        String horizontal = "+-------+-------+-------+";
         for (int linha = 0; linha < 3; linha++) {
-            // Linha por linha da carta (5 linhas visuais por carta)
+            System.out.println(horizontal);
             for (int linhaVisual = 0; linhaVisual < 5; linhaVisual++) {
                 for (int coluna = 0; coluna < 3; coluna++) {
                     Carta carta = matriz[linha][coluna];
-                    if (carta != null) {
-                        System.out.print(carta.toStringVisual()[linhaVisual]);
-                    } else {
-                        // Espaço vazio com o mesmo tamanho
-                        System.out.print("       ");
-                    }
+                    String conteudo = (carta != null) ? carta.toStringVisual()[linhaVisual] : "       ";
+                    System.out.print("|" + conteudo);
                 }
-                System.out.println();
+                System.out.println("|");
             }
         }
+        System.out.println(horizontal);
     }
 
     public boolean estaCheio() {

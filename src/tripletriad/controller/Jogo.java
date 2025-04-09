@@ -126,27 +126,31 @@ public class Jogo {
 
             List<Carta> cartas = atual.getCartasNaMao();
 
-// 1. Exibe os nomes e tipos em uma linha
+// 1. Títulos centralizados com índice
             for (int i = 0; i < cartas.size(); i++) {
                 Carta carta = cartas.get(i);
                 String titulo = String.format("[%d] %s - %s", i, carta.getNome(), carta.getTipo());
-                System.out.printf("%-25s", titulo); // Largura fixa pra alinhar
+                int largura = 7; // largura visual da carta
+                int padding = Math.max(0, (largura - titulo.length()) / 2);
+                String tituloCentralizado = " ".repeat(Math.max(0, padding)) + titulo;
+                System.out.printf("%-25s", tituloCentralizado);
             }
-            System.out.println(); // Quebra de linha
+            System.out.println();
 
-// 2. Pega visual de todas as cartas
+// 2. Visual da carta
             String[][] visuais = new String[cartas.size()][];
             for (int i = 0; i < cartas.size(); i++) {
                 visuais[i] = cartas.get(i).toStringVisual();
             }
 
-// 3. Exibe linha por linha horizontalmente
+// 3. Exibir visual linha por linha
             for (int linha = 0; linha < 5; linha++) {
                 for (int i = 0; i < cartas.size(); i++) {
-                    System.out.printf("%-25s", visuais[i][linha]); // Largura fixa também
+                    System.out.printf("%-25s", visuais[i][linha]);
                 }
                 System.out.println();
             }
+
 
 
             // Escolher carta
