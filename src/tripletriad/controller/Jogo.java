@@ -4,25 +4,21 @@ import tripletriad.model.Carta;
 import tripletriad.model.Jogador;
 import tripletriad.model.Tabuleiro;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 public class Jogo {
     private Jogador jogador1;
     private Jogador jogador2;
     private Tabuleiro tabuleiro;
     private int turno;
+    private Map<Jogador, List<Carta>> cartasVisiveisOponente;
 
     public Jogo(Jogador jogador1, Jogador jogador2) {
         this.jogador1 = jogador1;
         this.jogador2 = jogador2;
         this.tabuleiro = new Tabuleiro();
         this.turno = 0;
-
-        // Pontuação inicial
-        jogador1.setPontuacao(5);
-        jogador2.setPontuacao(5);
+        this.cartasVisiveisOponente = new HashMap<>();
     }
 
     public void jogarCarta(int linha, int coluna, Carta carta, int indiceCarta) {
@@ -106,56 +102,64 @@ public class Jogo {
     }
 
     public void iniciar(Scanner scanner) {
+        // Inicializa as 3 cartas visíveis do oponente antes do jogo começar
+        cartasVisiveisOponente.put(jogador1, new ArrayList<>(jogador2.getCartasNaMao().subList(0, Math.min(3, jogador2.getCartasNaMao().size()))));
+        cartasVisiveisOponente.put(jogador2, new ArrayList<>(jogador1.getCartasNaMao().subList(0, Math.min(3, jogador1.getCartasNaMao().size()))));
+
         while (!jogoFinalizado()) {
             mostrarTabuleiro();
             mostrarPlacar();
 
             Jogador atual = getJogadorAtual();
+            Jogador oponente = (atual == jogador1) ? jogador2 : jogador1;
             System.out.println("\nVez de " + atual.getNome());
 
-//             Mostra as cartas na mão
-//            List<Carta> cartas = atual.getCartasNaMao();
-//            for (int i = 0; i < cartas.size(); i++) {
-//                Carta carta = cartas.get(i);
-//                String[] visual = carta.toStringVisual();
-//                System.out.println("[" + i + "] " + carta.getNome() + " - " + carta.getTipo());
-//                for (String linha : visual) {
-//                    System.out.println("    " + linha);
-//                }
-//            }
+            List<Carta> cartasJogador = atual.getCartasNaMao();
+            List<Carta> cartasOponenteVisiveis = cartasVisiveisOponente.get(atual);
 
-            List<Carta> cartas = atual.getCartasNaMao();
-
-// 1. Títulos centralizados com índice
-            for (int i = 0; i < cartas.size(); i++) {
-                Carta carta = cartas.get(i);
+            // Cartas do jogador (com índice)
+            for (int i = 0; i < cartasJogador.size(); i++) {
+                Carta carta = cartasJogador.get(i);
                 String titulo = String.format("[%d] %s - %s", i, carta.getNome(), carta.getTipo());
-                int largura = 7; // largura visual da carta
-                int padding = Math.max(0, (largura - titulo.length()) / 2);
-                String tituloCentralizado = " ".repeat(Math.max(0, padding)) + titulo;
-                System.out.printf("%-25s", tituloCentralizado);
+                System.out.printf("%-25s", titulo);
             }
             System.out.println();
 
-// 2. Visual da carta
-            String[][] visuais = new String[cartas.size()][];
-            for (int i = 0; i < cartas.size(); i++) {
-                visuais[i] = cartas.get(i).toStringVisual();
+            String[][] visuaisJogador = new String[cartasJogador.size()][];
+            for (int i = 0; i < cartasJogador.size(); i++) {
+                visuaisJogador[i] = cartasJogador.get(i).toStringVisual();
             }
 
-// 3. Exibir visual linha por linha
             for (int linha = 0; linha < 5; linha++) {
-                for (int i = 0; i < cartas.size(); i++) {
-                    System.out.printf("%-25s", visuais[i][linha]);
+                for (int i = 0; i < cartasJogador.size(); i++) {
+                    System.out.printf("%-25s", visuaisJogador[i][linha]);
                 }
                 System.out.println();
             }
 
+            // Separador visual
+            System.out.println("--- Cartas visíveis do oponente ---");
 
+            for (Carta carta : cartasOponenteVisiveis) {
+                String titulo = String.format("    %s - %s", carta.getNome(), carta.getTipo());
+                System.out.printf("%-25s", titulo);
+            }
+            System.out.println();
 
-            // Escolher carta
+            String[][] visuaisOponente = new String[cartasOponenteVisiveis.size()][];
+            for (int i = 0; i < cartasOponenteVisiveis.size(); i++) {
+                visuaisOponente[i] = cartasOponenteVisiveis.get(i).toStringVisual();
+            }
+
+            for (int linha = 0; linha < 5; linha++) {
+                for (int i = 0; i < cartasOponenteVisiveis.size(); i++) {
+                    System.out.printf("%-25s", visuaisOponente[i][linha]);
+                }
+                System.out.println();
+            }
+
             int indiceCarta = -1;
-            while (indiceCarta < 0 || indiceCarta >= cartas.size()) {
+            while (indiceCarta < 0 || indiceCarta >= cartasJogador.size()) {
                 System.out.print("Escolha o índice da carta que deseja jogar: ");
                 try {
                     indiceCarta = Integer.parseInt(scanner.nextLine());
@@ -163,10 +167,13 @@ public class Jogo {
                     System.out.println("Digite um número válido.");
                 }
             }
-            Carta cartaEscolhida = cartas.remove(indiceCarta);
-            cartaEscolhida.setDono(atual); // define o dono antes de jogar
 
-            // Escolher posição
+            Carta cartaEscolhida = cartasJogador.remove(indiceCarta);
+            cartaEscolhida.setDono(atual);
+
+            // Remove a carta do oponente se for visível para o jogador atual
+            cartasVisiveisOponente.get(oponente).remove(cartaEscolhida);
+
             int linha = -1, coluna = -1;
             boolean jogadaValida = false;
 
@@ -178,7 +185,6 @@ public class Jogo {
                     System.out.print("Escolha a coluna (0 a 2): ");
                     coluna = Integer.parseInt(scanner.nextLine());
 
-                    // Usa o método jogarCarta aqui:
                     jogarCarta(linha, coluna, cartaEscolhida, indiceCarta);
                     jogadaValida = true;
                 } catch (Exception e) {
@@ -189,10 +195,8 @@ public class Jogo {
             System.out.println("--------------------------------------------\n");
         }
 
-        // Fim do jogo
         mostrarTabuleiro();
         mostrarPlacar();
         mostrarVencedor();
     }
-
 }
