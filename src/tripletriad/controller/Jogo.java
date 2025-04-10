@@ -36,16 +36,70 @@ public class Jogo {
         System.out.println("Carta jogada!");
     }
 
-    private void capturarCartasAdjacentes(int linha, int coluna, Carta carta) {
-        // CIMA
-        if (linha > 0) verificarCaptura(linha, coluna, linha - 1, coluna, carta, carta.getTopo(), "baixo");
-        // BAIXO
-        if (linha < 2) verificarCaptura(linha, coluna, linha + 1, coluna, carta, carta.getBaixo(), "topo");
-        // ESQUERDA
-        if (coluna > 0) verificarCaptura(linha, coluna, linha, coluna - 1, carta, carta.getEsquerda(), "direita");
-        // DIREITA
-        if (coluna < 2) verificarCaptura(linha, coluna, linha, coluna + 1, carta, carta.getDireita(), "esquerda");
+    private void capturarCartasAdjacentes(int linha, int coluna, Carta cartaJogada) {
+        List<int[]> capturasNormais = new ArrayList<>();
+        Map<Integer, List<int[]>> capturasPorSoma = new HashMap<>();
+
+        verificarAdjacente(linha, coluna, linha - 1, coluna, cartaJogada, cartaJogada.getTopo(), "baixo", capturasNormais, capturasPorSoma); // CIMA
+        verificarAdjacente(linha, coluna, linha + 1, coluna, cartaJogada, cartaJogada.getBaixo(), "topo", capturasNormais, capturasPorSoma); // BAIXO
+        verificarAdjacente(linha, coluna, linha, coluna - 1, cartaJogada, cartaJogada.getEsquerda(), "direita", capturasNormais, capturasPorSoma); // ESQ
+        verificarAdjacente(linha, coluna, linha, coluna + 1, cartaJogada, cartaJogada.getDireita(), "esquerda", capturasNormais, capturasPorSoma); // DIR
+
+        boolean somaCapturaAtivada = false;
+        for (Map.Entry<Integer, List<int[]>> entry : capturasPorSoma.entrySet()) {
+            if (entry.getValue().size() >= 2) {
+                somaCapturaAtivada = true;
+                for (int[] pos : entry.getValue()) {
+                    capturar(cartaJogada, pos[0], pos[1], true);
+                }
+                cartaJogada.getDono().aumentarPontuacao(2);
+                System.out.println("Bônus: " + cartaJogada.getDono().getNome() + " recebeu +2 pontos por captura de soma igual!");
+                break;
+            }
+        }
+
+        if (!somaCapturaAtivada) {
+            for (int[] pos : capturasNormais) {
+                capturar(cartaJogada, pos[0], pos[1], false);
+            }
+        }
     }
+
+    private void verificarAdjacente(int li, int ci, int la, int ca, Carta jogada, int valorAtaque, String ladoDefesa,
+                                    List<int[]> capturasNormais, Map<Integer, List<int[]>> capturasPorSoma) {
+        if (la < 0 || la > 2 || ca < 0 || ca > 2) return;
+
+        Carta alvo = tabuleiro.getCarta(la, ca);
+        if (alvo != null && alvo.getDono() != jogada.getDono()) {
+            int valorDefesa = switch (ladoDefesa) {
+                case "topo" -> alvo.getTopo();
+                case "baixo" -> alvo.getBaixo();
+                case "esquerda" -> alvo.getEsquerda();
+                case "direita" -> alvo.getDireita();
+                default -> -1;
+            };
+
+            if (valorAtaque > valorDefesa) {
+                capturasNormais.add(new int[]{la, ca});
+            }
+
+            int soma = valorAtaque + valorDefesa;
+            capturasPorSoma.computeIfAbsent(soma, k -> new ArrayList<>()).add(new int[]{la, ca});
+        }
+    }
+
+    private void capturar(Carta cartaJogada, int linha, int coluna, boolean porSoma) {
+        Carta cartaAlvo = tabuleiro.getCarta(linha, coluna);
+        Jogador donoAnterior = cartaAlvo.getDono();
+        cartaAlvo.setDono(cartaJogada.getDono());
+        cartaJogada.getDono().aumentarPontuacao(1);
+        donoAnterior.diminuirPontuacao(1);
+
+        String tipo = porSoma ? "Captura por soma! " : "Carta capturada! ";
+        System.out.println(tipo + cartaJogada.getDono().getNome() + " tomou uma carta de " + donoAnterior.getNome());
+    }
+
+
 
     private void verificarCaptura(int linhaOrigem, int colunaOrigem, int linhaAlvo, int colunaAlvo, Carta cartaJogada, int valorAtaque, String ladoDefesa) {
         Carta cartaAlvo = tabuleiro.getCarta(linhaAlvo, colunaAlvo);
