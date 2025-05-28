@@ -77,55 +77,56 @@ public class GameCardPanel extends JPanel {
 
         int width = getWidth();
         int height = getHeight();
+        int nomeAltura = 20; // Espaço reservado para o nome da carta
+        int cartaAltura = height - nomeAltura;
 
-        if (this.isFaceDown) { // Se a carta deve estar virada para baixo
+        if (this.isFaceDown) {
             if (cardBackgroundImage != null) {
-                g2d.drawImage(cardBackgroundImage, 0, 0, width, height, this);
+                g2d.drawImage(cardBackgroundImage, 0, 0, width, cartaAltura, this);
             } else {
-                // Fallback para carta virada para baixo se a imagem de fundo falhar
-                g2d.setColor(new Color(0, 0, 150)); // Azul escuro
-                g2d.fillRect(0, 0, width, height);
+                g2d.setColor(new Color(0, 0, 150));
+                g2d.fillRect(0, 0, width, cartaAltura);
                 g2d.setColor(Color.WHITE);
-                g2d.drawRect(0, 0, width - 1, height - 1);
+                g2d.drawRect(0, 0, width - 1, cartaAltura - 1);
                 FontMetrics fm = g2d.getFontMetrics();
                 String backText = "TT";
-                g2d.drawString(backText, (width - fm.stringWidth(backText)) / 2, (height - fm.getHeight()) / 2 + fm.getAscent());
+                g2d.drawString(backText, (width - fm.stringWidth(backText)) / 2, (cartaAltura - fm.getHeight()) / 2 + fm.getAscent());
             }
+
             g2d.dispose();
             return;
         }
 
-        // A carta está virada para cima, continue com a lógica de desenho normal
-        if (this.carta == null) { // Virada para cima, mas sem dados da carta -> Slot Vazio
+        if (this.carta == null) {
             g2d.setColor(new Color(200, 200, 200, 100));
-            g2d.fillRect(0, 0, width, height);
+            g2d.fillRect(0, 0, width, cartaAltura);
             g2d.setColor(Color.DARK_GRAY);
-            g2d.drawRect(0, 0, width - 1, height - 1);
-            g2d.drawString("Vazio", width / 2 - 15, height / 2);
+            g2d.drawRect(0, 0, width - 1, cartaAltura - 1);
+            g2d.drawString("Vazio", width / 2 - 15, cartaAltura / 2);
             g2d.dispose();
             return;
         }
 
-        // Virada para cima e os dados da carta existem
-        if (cardBackgroundImage != null) { // Fundo para a arte da carta
-            g2d.drawImage(cardBackgroundImage, 0, 0, width, height, this);
+        if (cardBackgroundImage != null) {
+            g2d.drawImage(cardBackgroundImage, 0, 0, width, cartaAltura, this);
         } else {
-            g2d.setColor(Color.DARK_GRAY); // Fallback
-            g2d.fillRect(0, 0, width, height);
+            g2d.setColor(Color.DARK_GRAY);
+            g2d.fillRect(0, 0, width, cartaAltura);
         }
 
         if (monsterImage != null) {
             int monsterX = (width - MONSTER_IMAGE_WIDTH) / 2;
-            int monsterY = (height - MONSTER_IMAGE_HEIGHT) / 2 - (NAME_FONT_SIZE + 5);
+            int monsterY = (cartaAltura - MONSTER_IMAGE_HEIGHT) / 2;
             g2d.drawImage(monsterImage, monsterX, monsterY, MONSTER_IMAGE_WIDTH, MONSTER_IMAGE_HEIGHT, this);
         } else {
             g2d.setColor(Color.LIGHT_GRAY);
             int monsterX = (width - MONSTER_IMAGE_WIDTH) / 2;
-            int monsterY = (height - MONSTER_IMAGE_HEIGHT) / 2 - (NAME_FONT_SIZE + 5);
+            int monsterY = (cartaAltura - MONSTER_IMAGE_HEIGHT) / 2;
             g2d.fillRect(monsterX, monsterY, MONSTER_IMAGE_WIDTH, MONSTER_IMAGE_HEIGHT);
             g2d.setColor(Color.BLACK);
             g2d.drawString("?", monsterX + MONSTER_IMAGE_WIDTH / 2 - 3, monsterY + MONSTER_IMAGE_HEIGHT / 2 + 5);
         }
+
 
         g2d.setFont(new Font("Arial", Font.BOLD, RANK_FONT_SIZE));
         g2d.setColor(RANK_COLOR);
@@ -138,17 +139,21 @@ public class GameCardPanel extends JPanel {
         FontMetrics fmRank = g2d.getFontMetrics();
         int margin = 5;
         g2d.drawString(rankTopo, width / 2 - fmRank.stringWidth(rankTopo) / 2, margin + fmRank.getAscent());
-        g2d.drawString(rankBaixo, width / 2 - fmRank.stringWidth(rankBaixo) / 2, height - margin - fmRank.getDescent() + fmRank.getAscent() / 2);
-        g2d.drawString(rankEsq, margin, height / 2 + fmRank.getAscent() / 2);
-        g2d.drawString(rankDir, width - margin - fmRank.stringWidth(rankDir), height / 2 + fmRank.getAscent() / 2);
+        g2d.drawString(rankBaixo, width / 2 - fmRank.stringWidth(rankBaixo) / 2, cartaAltura - margin - fmRank.getDescent() + fmRank.getAscent() / 2);
+        g2d.drawString(rankEsq, margin, cartaAltura / 2 + fmRank.getAscent() / 2);
+        g2d.drawString(rankDir, width - margin - fmRank.stringWidth(rankDir), cartaAltura / 2 + fmRank.getAscent() / 2);
 
+        // Nome da carta FORA da carta
         g2d.setFont(new Font("Arial", Font.BOLD, NAME_FONT_SIZE));
         g2d.setColor(NAME_COLOR);
         FontMetrics fmName = g2d.getFontMetrics();
         String nomeCarta = carta.getNome();
         int nomeWidth = fmName.stringWidth(nomeCarta);
-        g2d.drawString(nomeCarta, width / 2 - nomeWidth / 2, height - margin - fmRank.getHeight() - fmName.getDescent());
+        int nomeX = width / 2 - nomeWidth / 2;
+        int nomeY = height - 5;
+        g2d.drawString(nomeCarta, nomeX, nomeY);
 
         g2d.dispose();
     }
+
 }
