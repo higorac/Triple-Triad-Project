@@ -31,10 +31,14 @@ public class GameCardPanel extends JPanel {
         loadImages();
     }
 
+    private String formatCardId(int id) {
+        return String.format("%03d", id);
+    }
+
     private void loadImages() {
         // Carregar imagem de fundo da carta
         try {
-            URL bgUrl = getClass().getResource("/images/card_art/card_bg.png");
+            URL bgUrl = getClass().getResource("/resources/images/card_art/card_bg.png");
             if (bgUrl != null) {
                 cardBackgroundImage = ImageIO.read(bgUrl);
             } else {
@@ -47,7 +51,7 @@ public class GameCardPanel extends JPanel {
         // Carregar imagem do monstro, se a carta não for nula
         if (this.carta != null) {
             try {
-                String monsterImagePath = "/images/card_art/monsters/" + this.carta.getId() + ".png";
+                String monsterImagePath = "/resources/images/card_art/monsters/" + formatCardId(this.carta.getId()) + ".png";
                 URL monsterUrl = getClass().getResource(monsterImagePath);
                 if (monsterUrl != null) {
                     monsterImage = ImageIO.read(monsterUrl);

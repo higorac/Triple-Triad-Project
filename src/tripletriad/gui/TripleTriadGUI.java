@@ -16,7 +16,6 @@ public class TripleTriadGUI extends JFrame {
 
     private Jogador jogador;
     private Jogo jogo;
-    private BackgroundPanel backgroundPanel; // Referência para o painel de fundo
 
     public TripleTriadGUI(Jogador jogador, Jogo jogo) {
         this.jogador = jogador;
@@ -25,7 +24,8 @@ public class TripleTriadGUI extends JFrame {
         setTitle("Triple Triad - " + jogador.getNome());
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        backgroundPanel = new BackgroundPanel("/images/back.png"); // Seu fundo do jogo
+        // Referência para o painel de fundo
+        BackgroundPanel backgroundPanel = new BackgroundPanel("/resources/images/back.png"); // Seu fundo do jogo
         backgroundPanel.setLayout(new BorderLayout(10, 10));
         setContentPane(backgroundPanel);
 
