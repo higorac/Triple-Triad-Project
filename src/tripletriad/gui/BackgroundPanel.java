@@ -10,21 +10,20 @@ public class BackgroundPanel extends JPanel {
 
     private Image backgroundImage;
 
-    public BackgroundPanel(String imagePath) {
+    public BackgroundPanel(String imagePath) { // imagePath will be "/resources/images/back.png"
         // Tenta carregar a imagem do classpath (deve estar na pasta resources)
         try {
-            URL imageUrl = getClass().getResource(imagePath);
+            URL imageUrl = getClass().getResource(imagePath); // Use the provided imagePath directly
             if (imageUrl == null) {
                 System.err.println("Recurso de imagem não encontrado: " + imagePath);
-                // Define uma cor de fundo como fallback se a imagem não for encontrada
-                setBackground(Color.DARK_GRAY); // Exemplo de cor de fallback
+                setBackground(Color.DARK_GRAY);
             } else {
                 backgroundImage = ImageIO.read(imageUrl);
             }
         } catch (IOException e) {
             e.printStackTrace();
             System.err.println("Erro ao carregar a imagem de fundo: " + imagePath);
-            setBackground(Color.DARK_GRAY); // Exemplo de cor de fallback em caso de erro
+            setBackground(Color.DARK_GRAY);
         }
     }
 
