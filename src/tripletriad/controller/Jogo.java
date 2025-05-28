@@ -40,10 +40,10 @@ public class Jogo {
         List<int[]> capturasNormais = new ArrayList<>();
         Map<Integer, List<int[]>> capturasPorSoma = new HashMap<>();
 
-        verificarAdjacente(linha, coluna, linha - 1, coluna, cartaJogada, cartaJogada.getTopo(), "baixo", capturasNormais, capturasPorSoma); // CIMA
-        verificarAdjacente(linha, coluna, linha + 1, coluna, cartaJogada, cartaJogada.getBaixo(), "topo", capturasNormais, capturasPorSoma); // BAIXO
-        verificarAdjacente(linha, coluna, linha, coluna - 1, cartaJogada, cartaJogada.getEsquerda(), "direita", capturasNormais, capturasPorSoma); // ESQ
-        verificarAdjacente(linha, coluna, linha, coluna + 1, cartaJogada, cartaJogada.getDireita(), "esquerda", capturasNormais, capturasPorSoma); // DIR
+        verificarAdjacente( linha - 1, coluna, cartaJogada, cartaJogada.getTopo(), "baixo", capturasNormais, capturasPorSoma); // CIMA
+        verificarAdjacente( linha + 1, coluna, cartaJogada, cartaJogada.getBaixo(), "topo", capturasNormais, capturasPorSoma); // BAIXO
+        verificarAdjacente( linha, coluna - 1, cartaJogada, cartaJogada.getEsquerda(), "direita", capturasNormais, capturasPorSoma); // ESQ
+        verificarAdjacente( linha, coluna + 1, cartaJogada, cartaJogada.getDireita(), "esquerda", capturasNormais, capturasPorSoma); // DIR
 
         boolean somaCapturaAtivada = false;
         for (Map.Entry<Integer, List<int[]>> entry : capturasPorSoma.entrySet()) {
@@ -65,7 +65,7 @@ public class Jogo {
         }
     }
 
-    private void verificarAdjacente(int li, int ci, int la, int ca, Carta jogada, int valorAtaque, String ladoDefesa,
+    private void verificarAdjacente(int la, int ca, Carta jogada, int valorAtaque, String ladoDefesa,
                                     List<int[]> capturasNormais, Map<Integer, List<int[]>> capturasPorSoma) {
         if (la < 0 || la > 2 || ca < 0 || ca > 2) return;
 
@@ -97,32 +97,6 @@ public class Jogo {
 
         String tipo = porSoma ? "Captura por soma! " : "Carta capturada! ";
         System.out.println(tipo + cartaJogada.getDono().getNome() + " tomou uma carta de " + donoAnterior.getNome());
-    }
-
-
-
-    private void verificarCaptura(int linhaOrigem, int colunaOrigem, int linhaAlvo, int colunaAlvo, Carta cartaJogada, int valorAtaque, String ladoDefesa) {
-        Carta cartaAlvo = tabuleiro.getCarta(linhaAlvo, colunaAlvo);
-
-        if (cartaAlvo != null && cartaAlvo.getDono() != cartaJogada.getDono()) {
-            int valorDefesa = switch (ladoDefesa) {
-                case "topo" -> cartaAlvo.getTopo();
-                case "baixo" -> cartaAlvo.getBaixo();
-                case "esquerda" -> cartaAlvo.getEsquerda();
-                case "direita" -> cartaAlvo.getDireita();
-                default -> -1;
-            };
-
-            if (valorAtaque > valorDefesa) {
-                Jogador donoAnterior = cartaAlvo.getDono();
-                cartaAlvo.setDono(cartaJogada.getDono());
-
-                cartaJogada.getDono().aumentarPontuacao(1);
-                donoAnterior.diminuirPontuacao(1);
-
-                System.out.println("Carta capturada! " + cartaJogada.getDono().getNome() + " tomou uma carta de " + donoAnterior.getNome());
-            }
-        }
     }
 
     public Jogador getJogadorAtual() {
@@ -228,7 +202,7 @@ public class Jogo {
             // Remove a carta do oponente se for visível para o jogador atual
             cartasVisiveisOponente.get(oponente).remove(cartaEscolhida);
 
-            int linha = -1, coluna = -1;
+            int linha, coluna;
             boolean jogadaValida = false;
 
             while (!jogadaValida) {
