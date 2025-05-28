@@ -21,6 +21,18 @@ public class Jogo {
         this.cartasVisiveisOponente = new HashMap<>();
     }
 
+    public Jogador getJogador1() {
+        return jogador1;
+    }
+
+    public Jogador getJogador2() {
+        return jogador2;
+    }
+
+    public Tabuleiro getTabuleiro() { // Você já deve ter este para o tabuleiro
+        return tabuleiro;
+    }
+
     public void jogarCarta(int linha, int coluna, Carta carta, int indiceCarta) {
         if (!tabuleiro.colocarCarta(linha, coluna, carta)) {
             System.out.println("Posição ocupada. Tente outra.");

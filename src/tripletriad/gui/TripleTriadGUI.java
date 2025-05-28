@@ -1,18 +1,22 @@
 package tripletriad.gui;
 
 import tripletriad.controller.Jogo;
+import tripletriad.model.Carta; // Certifique-se que Carta está importado
 import tripletriad.model.Jogador;
+import tripletriad.model.Tabuleiro; // Certifique-se que Tabuleiro está importado
 
 import javax.swing.*;
 import java.awt.*;
+// ... outros imports
 
 public class TripleTriadGUI extends JFrame {
 
-    private static final int CARD_WIDTH = 90;
-    private static final int CARD_HEIGHT = 120;
+    private static final int CARD_WIDTH = 100; // Mantenha consistente com GameCardPanel
+    private static final int CARD_HEIGHT = 140; // Mantenha consistente com GameCardPanel
 
     private Jogador jogador;
     private Jogo jogo;
+    private BackgroundPanel backgroundPanel; // Referência para o painel de fundo
 
     public TripleTriadGUI(Jogador jogador, Jogo jogo) {
         this.jogador = jogador;
@@ -21,131 +25,134 @@ public class TripleTriadGUI extends JFrame {
         setTitle("Triple Triad - " + jogador.getNome());
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        // 1. Crie o BackgroundPanel com o caminho para sua imagem
-        // Lembre-se que o caminho é relativo à pasta 'resources'
-        BackgroundPanel backgroundPanel = new BackgroundPanel("/resources/images/back.png"); // <-- USE O NOME DA SUA IMAGEM
-        backgroundPanel.setLayout(new BorderLayout(10, 10)); // Define o layout para o painel de fundo
-
-        // 2. Defina o backgroundPanel como o contentPane do JFrame
+        backgroundPanel = new BackgroundPanel("/images/back.png"); // Seu fundo do jogo
+        backgroundPanel.setLayout(new BorderLayout(10, 10));
         setContentPane(backgroundPanel);
 
+        Jogador oponente = (jogo.getJogador1() == jogador) ? jogo.getJogador2() : jogo.getJogador1();
+
         // --- Mão do Jogador Principal (Embaixo) ---
-        JPanel playerHandContent = createHandContentPanel(5);
-        // Para que o fundo apareça através do JScrollPane e seu conteúdo,
-        // os painéis internos podem precisar ser transparentes.
-        playerHandContent.setOpaque(false); // Torna o painel de conteúdo da mão transparente
+        JPanel playerHandContent = createHandDisplayPanel(jogador.getCartasNaMao()); // Renomeado para clareza
+        // ... (configurações do playerScrollPane como antes) ...
         JScrollPane playerScrollPane = new JScrollPane(playerHandContent);
-        playerScrollPane.setOpaque(false); // Torna o JScrollPane transparente
-        playerScrollPane.getViewport().setOpaque(false); // Torna o viewport do JScrollPane transparente
-        playerScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        playerScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
-        playerScrollPane.setBorder(BorderFactory.createTitledBorder("Cartas de " + jogador.getNome()));
+        configureScrollPane(playerScrollPane, "Cartas de " + jogador.getNome());
+
 
         // --- Mão do Oponente (Em Cima) ---
-        JPanel opponentHandContent = createHandContentPanel(5);
-        opponentHandContent.setOpaque(false); // Transparência
+        java.util.List<Carta> opponentVisibleCards = new java.util.ArrayList<>();
+        String opponentName = "Oponente";
+        if (oponente != null) {
+            opponentName = oponente.getNome();
+            java.util.List<Carta> oponentHand = oponente.getCartasNaMao();
+            for(int i = 0; i < Math.min(3, oponentHand.size()); i++) {
+                opponentVisibleCards.add(oponentHand.get(i));
+            }
+        }
+        JPanel opponentHandContent = createHandDisplayPanel(opponentVisibleCards); // Renomeado
         JScrollPane opponentScrollPane = new JScrollPane(opponentHandContent);
-        opponentScrollPane.setOpaque(false); // Transparência
-        opponentScrollPane.getViewport().setOpaque(false); // Transparência
-        opponentScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        opponentScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
-        opponentScrollPane.setBorder(BorderFactory.createTitledBorder("Cartas do Oponente"));
-
+        configureScrollPane(opponentScrollPane, "Cartas de " + opponentName);
 
         // --- Painel do Tabuleiro ---
-        JPanel gameBoardPanel = createGameBoardPanel();
-        gameBoardPanel.setOpaque(false); // Transparência para o painel do tabuleiro em si
+        JPanel gameBoardDisplayPanel = createGameBoardDisplayPanel(); // Renomeado
 
         // --- Painéis Laterais ---
-        JPanel leftPanel = createSideTrianglePanel("Lado Esquerdo", true);
-        leftPanel.setOpaque(false); // Transparência
-        JPanel rightPanel = createSideTrianglePanel("Lado Direito", false);
-        rightPanel.setOpaque(false); // Transparência
+        // Você pode querer popular isso depois com informações ou cartas específicas
+        JPanel leftPanel = createSideInfoPanel("Info Jogador 1", true); // Renomeado
+        JPanel rightPanel = createSideInfoPanel("Info Jogador 2", false); // Renomeado
 
-
-        // 3. Adicione os componentes ao backgroundPanel (que agora é o contentPane)
+        // Adicionar os componentes ao backgroundPanel
         backgroundPanel.add(opponentScrollPane, BorderLayout.NORTH);
         backgroundPanel.add(playerScrollPane, BorderLayout.SOUTH);
-        backgroundPanel.add(gameBoardPanel, BorderLayout.CENTER); // Alterado de createGameBoardPanel() para a variável
-        backgroundPanel.add(leftPanel, BorderLayout.WEST);     // Alterado de createSideTrianglePanel(...) para a variável
-        backgroundPanel.add(rightPanel, BorderLayout.EAST);    // Alterado de createSideTrianglePanel(...) para a variável
+        backgroundPanel.add(gameBoardDisplayPanel, BorderLayout.CENTER);
+        backgroundPanel.add(leftPanel, BorderLayout.WEST);
+        backgroundPanel.add(rightPanel, BorderLayout.EAST);
 
-
-        setPreferredSize(new Dimension(1024, 768));
+        setPreferredSize(new Dimension(1024, 768)); // Ajuste se necessário
         pack();
         setLocationRelativeTo(null);
-        // setVisible(true); // É melhor chamar setVisible no método main após criar a instância
     }
 
-    private JPanel createCardPlaceholder(String label) {
-        JPanel cardPanel = new JPanel(new BorderLayout());
-        cardPanel.setPreferredSize(new Dimension(CARD_WIDTH, CARD_HEIGHT));
-        cardPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-        // Se quiser que os placeholders sejam transparentes para ver o fundo através deles:
-        // cardPanel.setOpaque(false);
-        // Se quiser que eles tenham uma cor de fundo semi-transparente:
-        cardPanel.setBackground(new Color(211, 211, 211, 150)); // Light gray com alpha (semi-transparente)
-        // Ou mantenha opaco com uma cor sólida:
-        // cardPanel.setBackground(Color.LIGHT_GRAY);
-
-        JLabel cardLabel = new JLabel(label, SwingConstants.CENTER);
-        cardPanel.add(cardLabel, BorderLayout.CENTER);
-        return cardPanel;
+    // Novo método para configurar JScrollPanes
+    private void configureScrollPane(JScrollPane scrollPane, String title) {
+        scrollPane.setOpaque(false);
+        scrollPane.getViewport().setOpaque(false);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
+        scrollPane.setBorder(BorderFactory.createTitledBorder(title));
     }
 
-    private JPanel createHandContentPanel(int cardCount) {
-        JPanel handContentPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
-        handContentPanel.setOpaque(false); // Mãozinhas transparentes
-        for (int i = 0; i < cardCount; i++) {
-            handContentPanel.add(createCardPlaceholder("Carta"));
+
+    // Método para criar o painel de exibição da mão (substitui createHandContentPanel)
+    private JPanel createHandDisplayPanel(java.util.List<Carta> cartasNaMao) {
+        JPanel handDisplayPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        handDisplayPanel.setOpaque(false);
+
+        Dimension cardDimension = new Dimension(CARD_WIDTH, CARD_HEIGHT);
+        if (cartasNaMao != null && !cartasNaMao.isEmpty()) {
+            for (Carta carta : cartasNaMao) {
+                handDisplayPanel.add(new GameCardPanel(carta, cardDimension));
+            }
+        } else {
+            for (int i = 0; i < 5; i++) { // Mostra 5 slots vazios por padrão
+                handDisplayPanel.add(new GameCardPanel(null, cardDimension));
+            }
         }
-        int preferredWidth = (CARD_WIDTH + 10) * cardCount + 10;
-        int preferredHeight = CARD_HEIGHT + 20; // Altura um pouco maior para o título do JScrollPane
-        handContentPanel.setPreferredSize(new Dimension(preferredWidth, preferredHeight));
-        return handContentPanel;
+        // Ajustar o tamanho preferido
+        int numCartasParaCalculo = (cartasNaMao != null && !cartasNaMao.isEmpty()) ? cartasNaMao.size() : 5;
+        if (numCartasParaCalculo == 0) numCartasParaCalculo = 1;
+        int preferredWidth = (CARD_WIDTH + 10) * numCartasParaCalculo + 10;
+        int preferredHeight = CARD_HEIGHT + 20;
+        handDisplayPanel.setPreferredSize(new Dimension(preferredWidth, preferredHeight));
+        return handDisplayPanel;
     }
 
-    private JPanel createGameBoardPanel() {
-        JPanel boardPanel = new JPanel(new GridLayout(3, 3, 5, 5));
-        boardPanel.setOpaque(false); // Painel do grid transparente
-        boardPanel.setBorder(BorderFactory.createTitledBorder("Tabuleiro"));
-        for (int i = 0; i < 9; i++) {
-            JPanel placeholder = createCardPlaceholder("Slot");
-            // placeholder.setOpaque(false); // Se quiser que os slots individuais sejam transparentes
-            boardPanel.add(placeholder);
+    // Método para criar o painel de exibição do tabuleiro (substitui createGameBoardPanel)
+    private JPanel createGameBoardDisplayPanel() {
+        JPanel boardDisplayPanel = new JPanel(new GridLayout(3, 3, 5, 5));
+        boardDisplayPanel.setOpaque(false);
+        boardDisplayPanel.setBorder(BorderFactory.createTitledBorder("Tabuleiro"));
+
+        Tabuleiro tabuleiroModel = jogo.getTabuleiro();
+        Dimension cardDimension = new Dimension(CARD_WIDTH, CARD_HEIGHT);
+
+        if (tabuleiroModel != null) {
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < 3; j++) {
+                    Carta cartaNoSlot = tabuleiroModel.getCarta(i, j);
+                    boardDisplayPanel.add(new GameCardPanel(cartaNoSlot, cardDimension));
+                }
+            }
+        } else {
+            for (int i = 0; i < 9; i++) {
+                boardDisplayPanel.add(new GameCardPanel(null, cardDimension));
+            }
         }
-        return boardPanel;
+        return boardDisplayPanel;
     }
 
-    private JPanel createSideTrianglePanel(String title, boolean isLeft) {
+    // Método para criar painéis laterais de informação (substitui createSideTrianglePanel)
+    private JPanel createSideInfoPanel(String title, boolean isLeft) {
         JPanel sidePanel = new JPanel(new BorderLayout(10, 10));
-        sidePanel.setOpaque(false); // Painel lateral principal transparente
-
-        JPanel peakPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        peakPanel.setOpaque(false);
-        peakPanel.add(createCardPlaceholder("Carta"));
-
-        JPanel basePanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
-        basePanel.setOpaque(false);
-        basePanel.add(createCardPlaceholder("Carta"));
-        basePanel.add(createCardPlaceholder("Carta"));
-
-        JPanel contentPanel = new JPanel();
-        contentPanel.setOpaque(false);
-        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
-        contentPanel.add(Box.createVerticalGlue());
-        contentPanel.add(peakPanel);
-        contentPanel.add(Box.createRigidArea(new Dimension(0, 10)));
-        contentPanel.add(basePanel);
-        contentPanel.add(Box.createVerticalGlue());
-
-        sidePanel.add(contentPanel, BorderLayout.CENTER);
+        sidePanel.setOpaque(false);
         sidePanel.setBorder(BorderFactory.createTitledBorder(title));
+        Dimension cardDimension = new Dimension(CARD_WIDTH, CARD_HEIGHT);
 
-        int preferredWidth = CARD_WIDTH * 2 + 20 + (2 * 10); // Ajuste conforme necessário
-        int preferredHeight = CARD_HEIGHT * 2 + 10 + (2 * 10); // Ajuste conforme necessário
+        // Conteúdo de exemplo - você pode personalizar isso
+        JPanel content = new JPanel();
+        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+        content.setOpaque(false);
+        content.add(Box.createVerticalGlue());
+        // Adicionar placeholders ou informações relevantes aqui
+        content.add(new GameCardPanel(null, cardDimension)); // Exemplo de slot de carta
+        content.add(Box.createRigidArea(new Dimension(0,10)));
+        content.add(new GameCardPanel(null, cardDimension));
+        content.add(Box.createVerticalGlue());
+
+        sidePanel.add(content, BorderLayout.CENTER);
+
+        int preferredWidth = CARD_WIDTH + 40; // Ajuste conforme o conteúdo
+        int preferredHeight = (CARD_HEIGHT + 10) * 2 + 40; // Ajuste
         sidePanel.setPreferredSize(new Dimension(preferredWidth, preferredHeight));
-
         return sidePanel;
     }
 }
