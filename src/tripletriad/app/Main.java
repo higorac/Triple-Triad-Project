@@ -1,44 +1,112 @@
-package tripletriad.app; // Pacote correto para a classe Main
+package tripletriad.app;
 
-// Importações corretas
-import tripletriad.controller.Jogo; // Importa a classe Jogo do pacote controller
+import tripletriad.controller.Jogo;
 import tripletriad.model.CartaLoader;
 import tripletriad.model.Jogador;
 import tripletriad.gui.TripleTriadGUI;
+import tripletriad.util.SoundEffect;
 import tripletriad.util.SoundManager;
 import javax.swing.SwingUtilities;
 
 public class Main {
+
+    private static SoundManager soundManager;
+    private static Jogador jogador1Global;
+    private static Jogador jogador2Global;
+    private static Jogo jogoAtual;
+    private static TripleTriadGUI gui1Instance;
+    private static TripleTriadGUI gui2Instance;
+
+    private static volatile boolean jogador1QuerReiniciar = false;
+    private static volatile boolean jogador2QuerReiniciar = false;
+    private static volatile boolean reinicioEmProgressoGlobal = false;
+
+    // GETTERS PÚBLICOS ESTÁTICOS para as flags de reinício
+    public static boolean isJogador1QuerReiniciar() { //
+        return jogador1QuerReiniciar; //
+    }
+
+    public static boolean isJogador2QuerReiniciar() { //
+        return jogador2QuerReiniciar; //
+    }
+
     public static void main(String[] args) {
-        // Initialize SoundManager early
-        final SoundManager soundManager = SoundManager.getInstance();
-
-        // Start the theme music sequence
+        soundManager = SoundManager.getInstance();
         soundManager.playThemeSequence();
+        iniciarNovoJogoEfetivamente();
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            if (soundManager != null) {
+                soundManager.stopAllSounds();
+                soundManager.shutdownExecutor();
+            }
+        }));
+    }
 
-        Jogador jogador1 = new Jogador("Jogador 1");
-        Jogador jogador2 = new Jogador("Jogador 2");
+    private static void iniciarNovoJogoEfetivamente() {
+        jogador1QuerReiniciar = false;
+        jogador2QuerReiniciar = false;
+        reinicioEmProgressoGlobal = false; // Certifique-se que esta flag também seja resetada aqui
+
+        jogador1Global = new Jogador("Jogador 1");
+        jogador2Global = new Jogador("Jogador 2");
 
         String caminhoCSV = "src/resources/cards.csv";
-        CartaLoader.distribuirCartas(caminhoCSV, jogador1, jogador2);
+        CartaLoader.distribuirCartas(caminhoCSV, jogador1Global, jogador2Global);
 
-        Jogo jogo = new Jogo(jogador1, jogador2); // Agora deve encontrar a classe Jogo
+        jogoAtual = new Jogo(jogador1Global, jogador2Global);
+
+        if (gui1Instance != null) {
+            gui1Instance.dispose();
+        }
+        if (gui2Instance != null) {
+            gui2Instance.dispose();
+        }
+
+        final Jogo finalJogoAtual = jogoAtual;
+        final Jogador finalJogador1 = jogador1Global;
+        final Jogador finalJogador2 = jogador2Global;
 
         SwingUtilities.invokeLater(() -> {
-            TripleTriadGUI gui1 = new TripleTriadGUI(jogador1, jogo);
-            gui1.setVisible(true);
+            gui1Instance = new TripleTriadGUI(finalJogador1, finalJogoAtual, () -> Main.solicitarReiniciarJogo(finalJogador1));
+            gui1Instance.setVisible(true);
         });
 
         SwingUtilities.invokeLater(() -> {
-            TripleTriadGUI gui2 = new TripleTriadGUI(jogador2, jogo);
-            gui2.setVisible(true);
+            gui2Instance = new TripleTriadGUI(finalJogador2, finalJogoAtual, () -> Main.solicitarReiniciarJogo(finalJogador2));
+            gui2Instance.setVisible(true);
         });
+    }
 
-        // Add a shutdown hook to stop sounds and the executor when the JVM exits
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            // System.out.println("Shutdown hook triggered. Stopping sounds and executor.");
-            soundManager.stopAllSounds();
-            soundManager.shutdownExecutor();
-        }));
+    public static synchronized void solicitarReiniciarJogo(Jogador jogadorSolicitante) {
+        if (reinicioEmProgressoGlobal) {
+            return;
+        }
+
+        boolean ambosConfirmaramAntes = isJogador1QuerReiniciar() && isJogador2QuerReiniciar(); // Use os getters
+
+        if (jogadorSolicitante.equals(jogador1Global)) {
+            jogador1QuerReiniciar = true;
+            if (gui1Instance != null && !ambosConfirmaramAntes) {
+                gui1Instance.exibirMensagemAguardandoOponente(true, jogador2Global.getNome());
+            }
+        } else if (jogadorSolicitante.equals(jogador2Global)) {
+            jogador2QuerReiniciar = true;
+            if (gui2Instance != null && !ambosConfirmaramAntes) {
+                gui2Instance.exibirMensagemAguardandoOponente(true, jogador1Global.getNome());
+            }
+        }
+
+        if (isJogador1QuerReiniciar() && isJogador2QuerReiniciar()) { // Use os getters
+            reinicioEmProgressoGlobal = true;
+
+            if (soundManager != null) {
+                soundManager.stopSound(SoundEffect.WIN);
+            }
+
+            if (gui1Instance != null) gui1Instance.exibirMensagemAguardandoOponente(false, null);
+            if (gui2Instance != null) gui2Instance.exibirMensagemAguardandoOponente(false, null);
+
+            iniciarNovoJogoEfetivamente();
+        }
     }
 }
