@@ -1,75 +1,55 @@
 package tripletriad.controller;
 
+import tripletriad.gui.TripleTriadGUI;
 import tripletriad.model.Carta;
 import tripletriad.model.Jogador;
 import tripletriad.model.Tabuleiro;
-import tripletriad.gui.TripleTriadGUI; // Importar a GUI
+import tripletriad.util.SoundEffect;
+import tripletriad.util.SoundManager;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class Jogo {
     private Jogador jogador1;
     private Jogador jogador2;
     private Tabuleiro tabuleiro;
-    private int turno;
+    private Jogador jogadorAtual;
     private List<TripleTriadGUI> observers = new ArrayList<>();
-
-    // Armazena as cartas do oponente que são inicialmente reveladas para cada jogador "viewer"
-    private Map<Jogador, List<Carta>> reveladasDoOponenteParaJogadorViewer;
+    private List<Carta> reveladasJogador1ParaJogador2 = new ArrayList<>(); // Cartas do J1 que J2 pode ver (Ex: Regra Open)
+    private List<Carta> reveladasJogador2ParaJogador1 = new ArrayList<>(); // Cartas do J2 que J1 pode ver (Ex: Regra Open)
+    private static final int NUM_CARTAS_REVELADAS_OPEN = 3;
 
     public Jogo(Jogador jogador1, Jogador jogador2) {
         this.jogador1 = jogador1;
         this.jogador2 = jogador2;
         this.tabuleiro = new Tabuleiro();
-        this.turno = 0;
-        this.reveladasDoOponenteParaJogadorViewer = new HashMap<>();
+        this.jogadorAtual = jogador1; // Define o jogador1 como o primeiro a jogar
 
-        // Preenche o mapa com as cartas inicialmente reveladas
-        // Chamado DEPOIS que CartaLoader.distribuirCartas já populou as mãos (na classe Main)
-        if (this.jogador1 != null && this.jogador1.getCartasNaMao() != null &&
-                this.jogador2 != null && this.jogador2.getCartasNaMao() != null) {
-
-            List<Carta> p1Hand = this.jogador1.getCartasNaMao();
-            List<Carta> p2Hand = this.jogador2.getCartasNaMao();
-
-            // Cartas de P1 visíveis para P2
-            if (!p1Hand.isEmpty()) {
-                this.reveladasDoOponenteParaJogadorViewer.put(this.jogador2, // Jogador 2 (viewer)
-                        new ArrayList<>(p1Hand.subList(0, Math.min(3, p1Hand.size()))));
-            } else {
-                this.reveladasDoOponenteParaJogadorViewer.put(this.jogador2, Collections.emptyList());
+        // Lógica de exemplo para a regra "Open": Revela algumas cartas do oponente no início.
+        // Você pode ajustar o número de cartas ou remover se não usar essa regra.
+        // Esta é apenas uma sugestão de implementação.
+        if (this.jogador1 != null && !this.jogador1.getCartasNaMao().isEmpty()) {
+            List<Carta> tempHand1 = new ArrayList<>(this.jogador1.getCartasNaMao());
+            Collections.shuffle(tempHand1); // Embaralha para pegar aleatórias
+            // Alterar o limite do loop para NUM_CARTAS_REVELADAS_OPEN (ou 3)
+            for (int i = 0; i < NUM_CARTAS_REVELADAS_OPEN && i < tempHand1.size(); i++) {
+                reveladasJogador1ParaJogador2.add(tempHand1.get(i));
             }
-
-            // Cartas de P2 visíveis para P1
-            if (!p2Hand.isEmpty()) {
-                this.reveladasDoOponenteParaJogadorViewer.put(this.jogador1, // Jogador 1 (viewer)
-                        new ArrayList<>(p2Hand.subList(0, Math.min(3, p2Hand.size()))));
-            } else {
-                this.reveladasDoOponenteParaJogadorViewer.put(this.jogador1, Collections.emptyList());
+        }
+        if (this.jogador2 != null && !this.jogador2.getCartasNaMao().isEmpty()) {
+            List<Carta> tempHand2 = new ArrayList<>(this.jogador2.getCartasNaMao());
+            Collections.shuffle(tempHand2); // Embaralha para pegar aleatórias
+            // Alterar o limite do loop para NUM_CARTAS_REVELADAS_OPEN (ou 3)
+            for (int i = 0; i < NUM_CARTAS_REVELADAS_OPEN && i < tempHand2.size(); i++) {
+                reveladasJogador2ParaJogador1.add(tempHand2.get(i));
             }
-            System.out.println("Jogo init: P1 ("+jogador1.getNome()+") vê de P2: " + this.reveladasDoOponenteParaJogadorViewer.get(this.jogador1));
-            System.out.println("Jogo init: P2 ("+jogador2.getNome()+") vê de P1: " + this.reveladasDoOponenteParaJogadorViewer.get(this.jogador2));
-
-        } else {
-            System.err.println("Erro no construtor de Jogo: Mãos dos jogadores não inicializadas corretamente antes de configurar cartas reveladas.");
-            // Inicializa com listas vazias para evitar NullPointerExceptions posteriores
-            this.reveladasDoOponenteParaJogadorViewer.put(this.jogador1, Collections.emptyList());
-            this.reveladasDoOponenteParaJogadorViewer.put(this.jogador2, Collections.emptyList());
         }
     }
 
-    // Getter para as cartas reveladas
-    public List<Carta> getReveladasDoOponenteParaJogador(Jogador jogadorViewer) {
-        return reveladasDoOponenteParaJogadorViewer.getOrDefault(jogadorViewer, Collections.emptyList());
-    }
-
-    // Métodos do Observer
     public void addObserver(TripleTriadGUI observer) {
-        if (!observers.contains(observer)) {
+        if (observer != null && !observers.contains(observer)) {
             observers.add(observer);
         }
     }
@@ -79,12 +59,21 @@ public class Jogo {
     }
 
     private void notifyObservers() {
-        for (TripleTriadGUI observer : new ArrayList<>(observers)) { // Itera sobre uma cópia
-            observer.updateGUI();
+        for (TripleTriadGUI observer : observers) {
+            if (observer != null) {
+                observer.updateGUI();
+            }
         }
     }
 
-    // Getters
+    public Tabuleiro getTabuleiro() {
+        return tabuleiro;
+    }
+
+    public Jogador getJogadorAtual() {
+        return jogadorAtual;
+    }
+
     public Jogador getJogador1() {
         return jogador1;
     }
@@ -93,156 +82,180 @@ public class Jogo {
         return jogador2;
     }
 
-    public Tabuleiro getTabuleiro() {
-        return tabuleiro;
-    }
-
-    public Jogador getJogadorAtual() {
-        if (jogador1 == null || jogador2 == null) return null; // Segurança
-        return (turno % 2 == 0) ? jogador1 : jogador2;
-    }
-
-    public boolean jogoFinalizado() {
-        return tabuleiro != null && tabuleiro.estaCheio();
-    }
-
-    public boolean tentarJogarCarta(int linha, int coluna, Carta cartaEscolhida, Jogador jogadorQueJogou) {
-        if (jogadorQueJogou == null || cartaEscolhida == null) {
-            System.err.println("Erro crítico: Jogador ou Carta escolhida é nulo em tentarJogarCarta.");
-            return false;
+    public boolean tentarJogarCarta(int linha, int coluna, Carta carta, Jogador jogadorQueJogou) {
+        if (jogadorQueJogou != jogadorAtual || tabuleiro.getCarta(linha, coluna) != null || carta == null) {
+            return false; // Não é turno do jogador, slot ocupado ou carta nula
         }
 
-        if (this.getJogadorAtual() != jogadorQueJogou) {
-            System.err.println("Atenção: Tentativa de jogada fora de turno por " + jogadorQueJogou.getNome() + ". Vez de: " + (this.getJogadorAtual() != null ? this.getJogadorAtual().getNome() : "Ninguém"));
-            return false;
+        boolean sucessoPosicionamento = tabuleiro.colocarCarta(linha, coluna, carta);
+        if (!sucessoPosicionamento) {
+            return false; // Não deveria acontecer se a checagem anterior passou, mas por segurança
         }
 
-        List<Carta> maoDoJogador = jogadorQueJogou.getCartasNaMao();
-        if (maoDoJogador == null) {
-            System.err.println("Erro crítico: Mão do jogador " + jogadorQueJogou.getNome() + " é nula.");
-            return false;
-        }
+        carta.setDono(jogadorQueJogou);
+        jogadorQueJogou.removerCarta(carta);
 
-        int indiceNaMao = maoDoJogador.indexOf(cartaEscolhida); // Requer Carta.equals()
-        if (indiceNaMao == -1) {
-            System.err.println("Erro: Carta " + cartaEscolhida.getNome() + " não encontrada na mão de " + jogadorQueJogou.getNome() +
-                    ". Verifique se Carta.equals() está implementado corretamente.");
-            return false;
-        }
+        virarCartasAdjacentes(linha, coluna, carta, jogadorQueJogou);
 
-        if (this.tabuleiro == null) {
-            System.err.println("Erro crítico: Tabuleiro do jogo é nulo.");
-            return false;
-        }
-
-        if (!this.tabuleiro.colocarCarta(linha, coluna, cartaEscolhida)) {
-            System.out.println("Posição [" + linha + "," + coluna + "] ocupada ou inválida. Carta não jogada.");
-            return false;
-        }
-
-        maoDoJogador.remove(indiceNaMao);
-        cartaEscolhida.setDono(jogadorQueJogou);
-
-        capturarCartasAdjacentes(linha, coluna, cartaEscolhida);
-
-        this.turno++;
-        System.out.println("Carta " + cartaEscolhida.getNome() + " jogada por " + jogadorQueJogou.getNome() + " em [" + linha + "," + coluna + "]");
+        jogadorAtual = (jogadorAtual == jogador1) ? jogador2 : jogador1;
+        SoundManager.getInstance().playSound(SoundEffect.CARD_PLACED);
         notifyObservers();
+
+        if (jogoFinalizado()) {
+            calcularPontuacaoFinal(); // Garante que a pontuação está correta e notifica
+            notifyObservers(); // Notifica para exibir o estado final e mensagem de vencedor
+        }
         return true;
     }
 
-    private void capturarCartasAdjacentes(int linha, int coluna, Carta cartaJogada) {
-        List<int[]> capturasNormais = new ArrayList<>();
-        Map<Integer, List<int[]>> capturasPorSoma = new HashMap<>();
+    private void virarCartasAdjacentes(int linha, int coluna, Carta cartaJogada, Jogador jogadorQueJogou) {
+        int[] dr = {-1, 1, 0, 0}; // Deslocamento nas linhas: Cima, Baixo, Mesmo, Mesmo
+        int[] dc = {0, 0, -1, 1}; // Deslocamento nas colunas: Mesmo, Mesmo, Esquerda, Direita
 
-        verificarAdjacente(linha - 1, coluna, cartaJogada, cartaJogada.getTopo(), "baixo", capturasNormais, capturasPorSoma);
-        verificarAdjacente(linha + 1, coluna, cartaJogada, cartaJogada.getBaixo(), "topo", capturasNormais, capturasPorSoma);
-        verificarAdjacente(linha, coluna - 1, cartaJogada, cartaJogada.getEsquerda(), "direita", capturasNormais, capturasPorSoma);
-        verificarAdjacente(linha, coluna + 1, cartaJogada, cartaJogada.getDireita(), "esquerda", capturasNormais, capturasPorSoma);
+        // Direções para debug/log (opcional)
+        // String[] direcoes = {"Cima", "Baixo", "Esquerda", "Direita"};
 
-        boolean algumaRegraEspecialAtivada = false;
-        // Lógica para "Same" (se implementada separadamente de "Plus")
-        // ... (se tiver regra "Same" que não seja baseada em soma, adicione aqui)
+        for (int i = 0; i < 4; i++) {
+            int nl = linha + dr[i]; // Nova linha (adjacente)
+            int nc = coluna + dc[i]; // Nova coluna (adjacente)
 
-        // Lógica para "Plus"
-        for (Map.Entry<Integer, List<int[]>> entry : capturasPorSoma.entrySet()) {
-            if (entry.getValue().size() >= 2) {
-                algumaRegraEspecialAtivada = true;
-                System.out.println("REGRA 'PLUS' ATIVADA (soma igual em múltiplas direções)");
-                for (int[] pos : entry.getValue()) {
-                    capturar(cartaJogada, pos[0], pos[1], true);
+            if (nl >= 0 && nl < 3 && nc >= 0 && nc < 3) { // Verifica se a posição adjacente está dentro do tabuleiro
+                Carta cartaAdjacente = tabuleiro.getCarta(nl, nc);
+                if (cartaAdjacente != null && cartaAdjacente.getDono() != jogadorQueJogou) {
+                    boolean virou = false;
+                    // Comparação dos ranks
+                    // dr[i] == -1: cartaAdjacente está ACIMA da cartaJogada. Compara Baixo da adjacente com Topo da jogada.
+                    // dr[i] == 1:  cartaAdjacente está ABAIXO da cartaJogada. Compara Topo da adjacente com Baixo da jogada.
+                    // dc[i] == -1: cartaAdjacente está à ESQUERDA da cartaJogada. Compara Direita da adjacente com Esquerda da jogada.
+                    // dc[i] == 1:  cartaAdjacente está à DIREITA da cartaJogada. Compara Esquerda da adjacente com Direita da jogada.
+
+                    if (dr[i] == -1 && cartaJogada.getTopo() > cartaAdjacente.getBaixo()) virou = true;       // Checa para CIMA
+                    else if (dr[i] == 1 && cartaJogada.getBaixo() > cartaAdjacente.getTopo()) virou = true;    // Checa para BAIXO
+                    else if (dc[i] == -1 && cartaJogada.getEsquerda() > cartaAdjacente.getDireita()) virou = true; // Checa para ESQUERDA
+                    else if (dc[i] == 1 && cartaJogada.getDireita() > cartaAdjacente.getEsquerda()) virou = true;  // Checa para DIREITA
+
+                    if (virou) {
+                        cartaAdjacente.setDono(jogadorQueJogou);
+                        // System.out.println("Carta " + cartaAdjacente.getNome() + " virada por " + cartaJogada.getNome() + " na direção: " + direcoes[i]);
+                    }
                 }
-                // Não há bônus de +2 pontos na regra padrão, apenas as capturas múltiplas.
-                break;
             }
         }
+        atualizarPlacarComBaseNoTabuleiro(); // Atualiza o placar após todas as possíveis viradas da jogada
+    }
 
-        if (!algumaRegraEspecialAtivada) {
-            for (int[] pos : capturasNormais) {
-                capturar(cartaJogada, pos[0], pos[1], false);
+    private void atualizarPlacarComBaseNoTabuleiro() {
+        if (jogador1 == null || jogador2 == null || tabuleiro == null) return;
+
+        int cartasJ1NoTabuleiro = 0;
+        int cartasJ2NoTabuleiro = 0;
+
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                Carta c = tabuleiro.getCarta(i, j);
+                if (c != null && c.getDono() != null) {
+                    if (c.getDono().equals(jogador1)) {
+                        cartasJ1NoTabuleiro++;
+                    } else if (c.getDono().equals(jogador2)) {
+                        cartasJ2NoTabuleiro++;
+                    }
+                }
             }
+        }
+        // A pontuação é o total de cartas que o jogador controla (mão + tabuleiro)
+        // O placar do Triple Triad geralmente é 5 vs 5 no início, e muda conforme as cartas são viradas.
+        // Uma forma de representar isso é:
+        // Pontuação Jogador 1 = 5 (base) + (cartas que J1 virou de J2) - (cartas que J2 virou de J1)
+        // No FFVIII, a pontuação é o número de cartas que você controla no final.
+        // Se cada um começa com 5, e há 9 posições, o placar pode variar de 0-9 a 9-0, ou 1-8, etc.
+        // A forma mais simples: a pontuação é o número de cartas na mão + número de cartas no tabuleiro pertencentes ao jogador.
+        // Total de cartas em jogo é sempre 10 (5 para cada jogador inicialmente).
+        // A pontuação exibida pode ser apenas as cartas no tabuleiro.
+
+        // Vamos usar o padrão de pontuação onde cada jogador tem 5 "pontos" (representando suas 5 cartas iniciais).
+        // Quando uma carta é virada, o placar muda.
+        // Se J1 tem N1 cartas no tabuleiro e J2 tem N2 cartas no tabuleiro:
+        // J1_score = 5 - (cartas iniciais de J1 que J2 pegou) + (cartas iniciais de J2 que J1 pegou)
+        // Total de cartas no tabuleiro = T = N1 + N2
+        // Cartas na mão de J1 = 5 - (cartas que J1 jogou)
+        // Cartas na mão de J2 = 5 - (cartas que J2 jogou)
+
+        // Pontuação final clássica: número de cartas que o jogador controla (mão + tabuleiro)
+        // Mas o placar visível durante o jogo muitas vezes é apenas o número de cartas no tabuleiro.
+        // Para o modelo, a pontuação do Jogador deve refletir o estado real de quantas cartas ele controla.
+        int pontuacaoJ1 = jogador1.getCartasNaMao().size() + cartasJ1NoTabuleiro;
+        int pontuacaoJ2 = jogador2.getCartasNaMao().size() + cartasJ2NoTabuleiro;
+
+        jogador1.setPontuacao(pontuacaoJ1);
+        jogador2.setPontuacao(pontuacaoJ2);
+    }
+
+    public boolean jogoFinalizado() {
+        if (tabuleiro == null) return true; // Segurança
+        // O jogo termina quando o tabuleiro está cheio (9 cartas)
+        int count = 0;
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                if (tabuleiro.getCarta(i, j) != null) {
+                    count++;
+                }
+            }
+        }
+        return count == 9;
+    }
+
+    private void calcularPontuacaoFinal() {
+        // A pontuação já deve ter sido atualizada pela última chamada a atualizarPlacarComBaseNoTabuleiro()
+        // Esta função é mais um ponto de demarcação ou para lógicas finais complexas (Same, Plus, etc.)
+        atualizarPlacarComBaseNoTabuleiro(); // Garante a atualização final
+        // System.out.println("Jogo finalizado. Pontuação final: ");
+        // System.out.println(jogador1.getNome() + ": " + jogador1.getPontuacao());
+        // System.out.println(jogador2.getNome() + ": " + jogador2.getPontuacao());
+    }
+
+    public SoundEffect determineEndGameSound() {
+        if (!jogoFinalizado() || jogador1 == null || jogador2 == null) return null;
+
+        int p1Score = jogador1.getPontuacao();
+        int p2Score = jogador2.getPontuacao();
+
+        // Considera o jogador da GUI para determinar se é vitória ou derrota "para ele"
+        // Isso é mais complexo se o som for tocado centralmente.
+        // Por enquanto, um som de vitória genérico se alguém ganhou, ou um som neutro/empate.
+        if (p1Score > p2Score) {
+            return SoundEffect.WIN;
+        } else if (p2Score > p1Score) {
+            return SoundEffect.WIN; // Poderia ser um som de "LOSE" se tocado pela perspectiva do jogador perdedor
+        } else {
+            // Para empate, pode ser um som neutro ou o mesmo de colocar carta.
+            // Se tiver um som específico para empate, use-o.
+            return SoundEffect.CARD_PLACED; // Ou outro som apropriado para empate.
         }
     }
 
-    private void verificarAdjacente(int la, int ca, Carta jogada, int valorAtaque, String ladoDefesaOposto,
-                                    List<int[]> capturasNormais, Map<Integer, List<int[]>> candidatasParaPlus) {
-        if (la < 0 || la > 2 || ca < 0 || ca > 2) return;
+    public List<Carta> getReveladasDoOponenteParaJogador(Jogador jogadorQueEstaVendo) {
+        if (jogadorQueEstaVendo == null || jogador1 == null || jogador2 == null) return Collections.emptyList();
 
-        Carta alvo = tabuleiro.getCarta(la, ca);
-        if (alvo != null && alvo.getDono() != null && alvo.getDono() != jogada.getDono()) {
-            int valorDefesaAlvo = -1;
-            switch (ladoDefesaOposto) {
-                case "topo": valorDefesaAlvo = alvo.getTopo(); break;
-                case "baixo": valorDefesaAlvo = alvo.getBaixo(); break;
-                case "esquerda": valorDefesaAlvo = alvo.getEsquerda(); break;
-                case "direita": valorDefesaAlvo = alvo.getDireita(); break;
+        if (jogadorQueEstaVendo.equals(jogador1)) {
+            // Retorna as cartas do Jogador 2 que o Jogador 1 pode ver
+            // Garante que as cartas retornadas ainda estão na mão do oponente
+            List<Carta> visiveis = new ArrayList<>();
+            for(Carta c : reveladasJogador2ParaJogador1) {
+                if (jogador2.getCartasNaMao().contains(c)) {
+                    visiveis.add(c);
+                }
             }
-            if (valorDefesaAlvo == -1) return;
-
-            if (valorAtaque > valorDefesaAlvo) {
-                capturasNormais.add(new int[]{la, ca});
+            return visiveis;
+        } else if (jogadorQueEstaVendo.equals(jogador2)) {
+            // Retorna as cartas do Jogador 1 que o Jogador 2 pode ver
+            List<Carta> visiveis = new ArrayList<>();
+            for(Carta c : reveladasJogador1ParaJogador2) {
+                if (jogador1.getCartasNaMao().contains(c)) {
+                    visiveis.add(c);
+                }
             }
-            // Para regra "Plus", adicionamos a carta e sua posição se a soma for relevante
-            // A checagem se a soma é igual em MÚLTIPLAS direções é feita em capturarCartasAdjacentes
-            int soma = valorAtaque + valorDefesaAlvo;
-            candidatasParaPlus.computeIfAbsent(soma, k -> new ArrayList<>()).add(new int[]{la, ca});
+            return visiveis;
         }
-    }
-
-    private void capturar(Carta cartaJogada, int linhaAlvo, int colunaAlvo, boolean porRegraEspecial) {
-        Carta cartaAlvo = tabuleiro.getCarta(linhaAlvo, colunaAlvo);
-        // Verifica se o alvo é válido e pertence ao oponente
-        if (cartaAlvo == null || cartaAlvo.getDono() == null || cartaAlvo.getDono() == cartaJogada.getDono()) {
-            return;
-        }
-
-        Jogador donoDaCartaJogada = cartaJogada.getDono();
-        Jogador donoAnteriorDaCartaAlvo = cartaAlvo.getDono();
-
-        System.out.println("--- CAPTURANDO CARTA ---");
-        System.out.println("Atacante: " + donoDaCartaJogada.getNome() + " (Score antes: " + donoDaCartaJogada.getPontuacao() + ")");
-        System.out.println("Defensor: " + donoAnteriorDaCartaAlvo.getNome() + " (Score antes: " + donoAnteriorDaCartaAlvo.getPontuacao() + ")");
-        System.out.println(donoDaCartaJogada.getNome() + " está capturando " + cartaAlvo.getNome() + " de " + donoAnteriorDaCartaAlvo.getNome());
-
-        cartaAlvo.setDono(donoDaCartaJogada);
-        donoDaCartaJogada.aumentarPontuacao(1);
-        donoAnteriorDaCartaAlvo.diminuirPontuacao(1); // Dono anterior sempre existe e é diferente
-
-        System.out.println("Score DEPOIS: " + donoDaCartaJogada.getNome() + "=" + donoDaCartaJogada.getPontuacao() +
-                ", " + donoAnteriorDaCartaAlvo.getNome() + "=" + donoAnteriorDaCartaAlvo.getPontuacao());
-        String tipo = porRegraEspecial ? "Captura por Regra Especial! " : "Carta capturada! ";
-        System.out.println(tipo);
-    }
-
-    // Métodos de console para depuração
-    public void mostrarTabuleiroConsole() {
-        if(tabuleiro != null) tabuleiro.exibirTabuleiro();
-    }
-
-    public void mostrarPlacarConsole() {
-        if(jogador1 != null && jogador2 != null) {
-            System.out.println(jogador1.getNome() + ": " + jogador1.getPontuacao() + " pontos");
-            System.out.println(jogador2.getNome() + ": " + jogador2.getPontuacao() + " pontos");
-        }
+        return Collections.emptyList();
     }
 }

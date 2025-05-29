@@ -1,32 +1,44 @@
-// Em src/tripletriad/app/Main.java
-package tripletriad.app;
+package tripletriad.app; // Pacote correto para a classe Main
 
-import javax.swing.SwingUtilities;
-import tripletriad.controller.Jogo;
-import tripletriad.model.*;
+// Importações corretas
+import tripletriad.controller.Jogo; // Importa a classe Jogo do pacote controller
+import tripletriad.model.CartaLoader;
+import tripletriad.model.Jogador;
 import tripletriad.gui.TripleTriadGUI;
+import tripletriad.util.SoundManager;
+import javax.swing.SwingUtilities;
 
 public class Main {
     public static void main(String[] args) {
-        Jogador jogador1 = new Jogador("Jogador 1"); //
-        Jogador jogador2 = new Jogador("Jogador 2"); //
+        // Initialize SoundManager early
+        final SoundManager soundManager = SoundManager.getInstance();
 
-        // PASSO 1: Distribuir cartas PRIMEIRO
-        String caminhoCSV = "src/resources/cards.csv"; //
-        CartaLoader.distribuirCartas(caminhoCSV, jogador1, jogador2); //
+        // Start the theme music sequence
+        soundManager.playThemeSequence();
 
-        // PASSO 2: Criar o Jogo DEPOIS que os jogadores têm cartas
-        Jogo jogo = new Jogo(jogador1, jogador2); //
-        // O construtor do Jogo agora poderá registrar as cartas inicialmente visíveis
+        Jogador jogador1 = new Jogador("Jogador 1");
+        Jogador jogador2 = new Jogador("Jogador 2");
 
-        SwingUtilities.invokeLater(() -> { //
-            TripleTriadGUI gui1 = new TripleTriadGUI(jogador1, jogo); //
-            gui1.setVisible(true); //
+        String caminhoCSV = "src/resources/cards.csv";
+        CartaLoader.distribuirCartas(caminhoCSV, jogador1, jogador2);
+
+        Jogo jogo = new Jogo(jogador1, jogador2); // Agora deve encontrar a classe Jogo
+
+        SwingUtilities.invokeLater(() -> {
+            TripleTriadGUI gui1 = new TripleTriadGUI(jogador1, jogo);
+            gui1.setVisible(true);
         });
 
-        SwingUtilities.invokeLater(() -> { //
-            TripleTriadGUI gui2 = new TripleTriadGUI(jogador2, jogo); //
-            gui2.setVisible(true); //
+        SwingUtilities.invokeLater(() -> {
+            TripleTriadGUI gui2 = new TripleTriadGUI(jogador2, jogo);
+            gui2.setVisible(true);
         });
+
+        // Add a shutdown hook to stop sounds and the executor when the JVM exits
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            // System.out.println("Shutdown hook triggered. Stopping sounds and executor.");
+            soundManager.stopAllSounds();
+            soundManager.shutdownExecutor();
+        }));
     }
 }
