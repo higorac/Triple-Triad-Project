@@ -48,4 +48,17 @@ public class Carta {
     public String getTipo() {
         return tipo;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Carta carta = (Carta) o;
+        return id == carta.id; // Comparar pelo ID
+    }
+
+    @Override
+    public int hashCode() {
+        return Integer.hashCode(id); // Usar o hash do ID
+    }
 }

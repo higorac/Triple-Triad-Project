@@ -1,10 +1,14 @@
 package tripletriad.gui;
 
 import tripletriad.model.Carta;
-// import tripletriad.model.Jogador; // Removido se não usado diretamente aqui
+import tripletriad.model.Jogador; // Necessário para comparar dono
+import tripletriad.controller.Jogo; // Necessário para pegar J1 e J2
+import tripletriad.util.ImageCache;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.net.URL;
 import javax.imageio.ImageIO;
@@ -16,151 +20,200 @@ public class GameCardPanel extends JPanel {
     private Image monsterImage;
     private boolean isFaceDown;
 
-    private static final int MONSTER_IMAGE_WIDTH = 60; //
-    private static final int MONSTER_IMAGE_HEIGHT = 60; //
-    private static final int RANK_FONT_SIZE = 16; //
-    private static final int NAME_FONT_SIZE = 15; //
-    private static final Color RANK_COLOR = Color.WHITE; //
-    private static final Color NAME_COLOR = Color.WHITE; //
+    private static final int MONSTER_IMAGE_WIDTH = 60;
+    private static final int MONSTER_IMAGE_HEIGHT = 60;
+    private static final int RANK_FONT_SIZE = 16;
+    private static final int NAME_FONT_SIZE = 15;
+    private static final Color RANK_COLOR = Color.WHITE;
+    private static final Color NAME_COLOR = Color.WHITE;
 
-    public GameCardPanel(Carta carta, Dimension preferredSize, boolean isFaceDown) {
+    private TripleTriadGUI guiInstance;
+    private boolean isBoardSlot;
+    private int boardRow = -1, boardCol = -1;
+    private int handIndex = -1;
+
+    public GameCardPanel(Carta carta, Dimension preferredSize, boolean isFaceDown,
+                         TripleTriadGUI gui, boolean isBoardSlot, int id1, int id2) {
         this.carta = carta;
         this.isFaceDown = isFaceDown;
+        this.guiInstance = gui;
+        this.isBoardSlot = isBoardSlot;
+
+        if (isBoardSlot) {
+            this.boardRow = id1;
+            this.boardCol = id2;
+        } else {
+            this.handIndex = id1;
+        }
+
         setPreferredSize(preferredSize);
-        setOpaque(false); //
-        loadImages();
+        setOpaque(false);
+        loadImages(); // Carrega imagens baseadas na carta inicial (pode ser null)
+
+        if (this.guiInstance != null) {
+            addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    if (GameCardPanel.this.isBoardSlot) {
+                        guiInstance.boardSlotClicked(boardRow, boardCol);
+                    } else {
+                        if (!GameCardPanel.this.isFaceDown && GameCardPanel.this.carta != null) {
+                            guiInstance.cardInHandClicked(GameCardPanel.this.carta, handIndex);
+                        }
+                    }
+                }
+            });
+        }
     }
 
-    public GameCardPanel(Carta carta, Dimension preferredSize) {
-        this(carta, preferredSize, false); //
+    public GameCardPanel(Carta carta, Dimension preferredSize, boolean isFaceDown) {
+        this(carta, preferredSize, isFaceDown, null, false, -1, -1);
     }
+
+    // MÉTODO MOVIDO PARA FORA E CORRIGIDO
+    public void definirCarta(Carta novaCarta) {
+        this.carta = novaCarta;
+        loadImages(); // Sempre chama loadImages; o cache cuidará da eficiência.
+        repaint();
+    }
+
+    // MÉTODO MOVIDO PARA FORA E CORRIGIDO
+    // O nome do parâmetro 'jogadorDestaGui' está correto aqui se você o usa com esse nome dentro do método.
+    // A classe TripleTriadGUI passa 'this.jogador' para este parâmetro.
+    public void definirDestaqueSelecao(boolean selecionado, Jogador jogadorDestaGui, Jogo jogo) {
+        if (selecionado && this.carta != null && jogadorDestaGui != null && jogo != null && jogo.getJogador1() != null && jogo.getJogador2() != null) {
+            if (jogadorDestaGui == jogo.getJogador1()) {
+                setBorder(BorderFactory.createLineBorder(Color.CYAN, 3));
+            } else if (jogadorDestaGui == jogo.getJogador2()) {
+                setBorder(BorderFactory.createLineBorder(Color.RED, 3));
+            } else {
+                setBorder(BorderFactory.createLineBorder(Color.YELLOW, 3)); // Fallback
+            }
+        } else {
+            setBorder(null); // Remove borda se não selecionado
+        }
+        repaint(); // Pede repaint para mostrar/remover a borda
+    }
+
 
     private String formatCardId(int id) {
-        return String.format("%03d", id); //
+        return String.format("%03d", id);
     }
 
     private void loadImages() {
-        try {
-            URL bgUrl = getClass().getResource("/resources/images/card_art/card_bg.png"); //
-            if (bgUrl != null) {
-                cardBackgroundImage = ImageIO.read(bgUrl); //
-            } else {
-                System.err.println("Imagem de fundo da carta não encontrada: /resources/images/card_art/card_bg.png"); //
-            }
-        } catch (IOException e) {
-            System.err.println("Erro ao carregar imagem de fundo da carta: " + e.getMessage()); //
+        // Carrega a imagem de fundo da carta usando o cache
+        this.cardBackgroundImage = ImageCache.getCardBackgroundImage();
+        if (this.cardBackgroundImage == null) {
+            System.err.println("Falha ao carregar imagem de fundo da carta do cache.");
+            // Você pode definir uma cor de fundo sólida como fallback aqui se desejar
         }
 
-        // Só carrega imagem do monstro se a carta existir E estiver virada para cima
+        // Reseta a imagem do monstro antes de tentar carregar uma nova
+        this.monsterImage = null;
         if (this.carta != null && !this.isFaceDown) {
-            try {
-                String monsterImagePath = "/resources/images/card_art/monsters/" + formatCardId(this.carta.getId()) + ".png"; //
-                URL monsterUrl = getClass().getResource(monsterImagePath); //
-                if (monsterUrl != null) {
-                    monsterImage = ImageIO.read(monsterUrl); //
-                } else {
-                    System.err.println("Imagem do monstro não encontrada: " + monsterImagePath); //
-                }
-            } catch (IOException e) {
-                System.err.println("Erro ao carregar imagem do monstro para ID " + this.carta.getId() + ": " + e.getMessage()); //
+            String monsterImagePath = "/resources/images/card_art/monsters/" + formatCardId(this.carta.getId()) + ".png";
+            this.monsterImage = ImageCache.getImage(monsterImagePath);
+            if (this.monsterImage == null) {
+                System.err.println("Falha ao carregar imagem do monstro '" + monsterImagePath + "' do cache para ID " + this.carta.getId());
             }
         }
     }
+
 
     @Override
     protected void paintComponent(Graphics g) {
-        super.paintComponent(g); //
+        super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g.create();
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON); //
-        g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON); //
-        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR); //
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 
         int width = getWidth();
         int height = getHeight();
-        int nomeAltura = 20; // Espaço reservado para o nome da carta //
-        int cartaAltura = height - nomeAltura; //
+        int nomeAltura = 20;
+        int cartaAlturaReal = height - nomeAltura;
 
         if (this.isFaceDown) {
             if (cardBackgroundImage != null) {
-                g2d.drawImage(cardBackgroundImage, 0, 0, width, cartaAltura, this); //
+                g2d.drawImage(cardBackgroundImage, 0, 0, width, cartaAlturaReal, this);
             } else {
-                g2d.setColor(new Color(0, 0, 150)); //
-                g2d.fillRect(0, 0, width, cartaAltura); //
-                g2d.setColor(Color.WHITE); //
-                g2d.drawRect(0, 0, width - 1, cartaAltura - 1); //
-                FontMetrics fm = g2d.getFontMetrics(); //
-                String backText = "TT"; //
-                g2d.drawString(backText, (width - fm.stringWidth(backText)) / 2, (cartaAltura - fm.getHeight()) / 2 + fm.getAscent()); //
+                g2d.setColor(new Color(0, 0, 150));
+                g2d.fillRect(0, 0, width, cartaAlturaReal);
+                g2d.setColor(Color.WHITE);
+                g2d.drawRect(0, 0, width - 1, cartaAlturaReal - 1);
+                FontMetrics fm = g2d.getFontMetrics();
+                String backText = "TT";
+                g2d.drawString(backText, (width - fm.stringWidth(backText)) / 2, (cartaAlturaReal - fm.getHeight()) / 2 + fm.getAscent());
             }
-
-            g2d.dispose();
-            return;
-        }
-
-        if (this.carta == null) {
-            // Slot vazio: desenha um fundo suave sem borda dura
-            g2d.setColor(new Color(200, 200, 200, 100)); // Fundo semi-transparente //
-            g2d.fillRect(0, 0, width, cartaAltura); //
-
-            // Opcional: Texto "Vazio" centralizado
-            g2d.setColor(Color.DARK_GRAY); //
-            g2d.setFont(new Font("Arial", Font.ITALIC, 12)); // Fonte para "Vazio"
+        } else if (this.carta == null) {
+            g2d.setColor(new Color(200, 200, 200, 100));
+            g2d.fillRect(0, 0, width, cartaAlturaReal);
+            g2d.setColor(Color.DARK_GRAY);
+            g2d.setFont(new Font("Arial", Font.ITALIC, 12));
             FontMetrics fm = g2d.getFontMetrics();
             String emptyText = "Vazio";
-            g2d.drawString(emptyText, (width - fm.stringWidth(emptyText)) / 2, (cartaAltura - fm.getHeight()) / 2 + fm.getAscent());
-
-            g2d.dispose();
-            return;
-        }
-
-        if (cardBackgroundImage != null) {
-            g2d.drawImage(cardBackgroundImage, 0, 0, width, cartaAltura, this); //
+            g2d.drawString(emptyText, (width - fm.stringWidth(emptyText)) / 2, (cartaAlturaReal - fm.getHeight()) / 2 + fm.getAscent());
         } else {
-            g2d.setColor(Color.DARK_GRAY); //
-            g2d.fillRect(0, 0, width, cartaAltura); //
+            if (cardBackgroundImage != null) {
+                g2d.drawImage(cardBackgroundImage, 0, 0, width, cartaAlturaReal, this);
+            } else {
+                g2d.setColor(Color.DARK_GRAY);
+                g2d.fillRect(0, 0, width, cartaAlturaReal);
+            }
+
+            if (isBoardSlot && this.carta.getDono() != null && guiInstance != null) {
+                Jogo jogoAtual = guiInstance.getJogo();
+                if (jogoAtual != null && jogoAtual.getJogador1() != null && jogoAtual.getJogador2() != null) { // Checagem adicional
+                    Jogador dono = this.carta.getDono();
+                    Color ownerTint = null;
+                    if (dono.equals(jogoAtual.getJogador1())) { // Use .equals() para comparar objetos
+                        ownerTint = new Color(0, 100, 255, 70);
+                    } else if (dono.equals(jogoAtual.getJogador2())) {
+                        ownerTint = new Color(255, 50, 50, 70);
+                    }
+                    if (ownerTint != null) {
+                        g2d.setColor(ownerTint);
+                        g2d.fillRect(1, 1, width - 2, cartaAlturaReal - 2);
+                    }
+                }
+            }
+
+            if (monsterImage != null) {
+                int monsterX = (width - MONSTER_IMAGE_WIDTH) / 2;
+                int monsterY = (cartaAlturaReal - MONSTER_IMAGE_HEIGHT) / 2;
+                g2d.drawImage(monsterImage, monsterX, monsterY, MONSTER_IMAGE_WIDTH, MONSTER_IMAGE_HEIGHT, this);
+            } else {
+                g2d.setColor(Color.LIGHT_GRAY);
+                int monsterX = (width - MONSTER_IMAGE_WIDTH) / 2;
+                int monsterY = (cartaAlturaReal - MONSTER_IMAGE_HEIGHT) / 2;
+                g2d.fillRect(monsterX, monsterY, MONSTER_IMAGE_WIDTH, MONSTER_IMAGE_HEIGHT);
+                g2d.setColor(Color.BLACK);
+                g2d.drawString("?", monsterX + MONSTER_IMAGE_WIDTH / 2 - 3, monsterY + MONSTER_IMAGE_HEIGHT / 2 + 5);
+            }
+
+            g2d.setFont(new Font("Arial", Font.BOLD, RANK_FONT_SIZE));
+            g2d.setColor(RANK_COLOR);
+            // ... (desenho dos ranks, como antes) ...
+            String rankTopo = carta.verificandoPontosCartas(carta.getTopo());
+            String rankBaixo = carta.verificandoPontosCartas(carta.getBaixo());
+            String rankEsq = carta.verificandoPontosCartas(carta.getEsquerda());
+            String rankDir = carta.verificandoPontosCartas(carta.getDireita());
+            FontMetrics fmRank = g2d.getFontMetrics();
+            int margin = 5;
+            g2d.drawString(rankTopo, width / 2 - fmRank.stringWidth(rankTopo) / 2, margin + fmRank.getAscent());
+            g2d.drawString(rankBaixo, width / 2 - fmRank.stringWidth(rankBaixo) / 2, cartaAlturaReal - margin);
+            g2d.drawString(rankEsq, margin, cartaAlturaReal / 2 + fmRank.getAscent() / 2);
+            g2d.drawString(rankDir, width - margin - fmRank.stringWidth(rankDir), cartaAlturaReal / 2 + fmRank.getAscent() / 2);
         }
 
-        if (monsterImage != null) {
-            int monsterX = (width - MONSTER_IMAGE_WIDTH) / 2; //
-            int monsterY = (cartaAltura - MONSTER_IMAGE_HEIGHT) / 2; //
-            g2d.drawImage(monsterImage, monsterX, monsterY, MONSTER_IMAGE_WIDTH, MONSTER_IMAGE_HEIGHT, this); //
-        } else {
-            // Placeholder para imagem do monstro se não carregada
-            g2d.setColor(Color.LIGHT_GRAY); //
-            int monsterX = (width - MONSTER_IMAGE_WIDTH) / 2; //
-            int monsterY = (cartaAltura - MONSTER_IMAGE_HEIGHT) / 2; //
-            g2d.fillRect(monsterX, monsterY, MONSTER_IMAGE_WIDTH, MONSTER_IMAGE_HEIGHT); //
-            g2d.setColor(Color.BLACK); //
-            g2d.drawString("?", monsterX + MONSTER_IMAGE_WIDTH / 2 - 3, monsterY + MONSTER_IMAGE_HEIGHT / 2 + 5); //
+        if (this.carta != null && !this.isFaceDown) {
+            g2d.setFont(new Font("Arial", Font.BOLD, NAME_FONT_SIZE));
+            g2d.setColor(NAME_COLOR);
+            FontMetrics fmName = g2d.getFontMetrics();
+            String nomeCarta = carta.getNome();
+            int nomeWidth = fmName.stringWidth(nomeCarta);
+            g2d.drawString(nomeCarta, (width - nomeWidth) / 2, height - fmName.getDescent() - 2);
         }
-
-
-        g2d.setFont(new Font("Arial", Font.BOLD, RANK_FONT_SIZE)); //
-        g2d.setColor(RANK_COLOR); //
-
-        String rankTopo = carta.verificandoPontosCartas(carta.getTopo()); //
-        String rankBaixo = carta.verificandoPontosCartas(carta.getBaixo()); //
-        String rankEsq = carta.verificandoPontosCartas(carta.getEsquerda()); //
-        String rankDir = carta.verificandoPontosCartas(carta.getDireita()); //
-
-        FontMetrics fmRank = g2d.getFontMetrics(); //
-        int margin = 5; //
-        g2d.drawString(rankTopo, width / 2 - fmRank.stringWidth(rankTopo) / 2, margin + fmRank.getAscent()); //
-        g2d.drawString(rankBaixo, width / 2 - fmRank.stringWidth(rankBaixo) / 2, cartaAltura - margin - fmRank.getDescent() + fmRank.getAscent() / 2); //
-        g2d.drawString(rankEsq, margin, cartaAltura / 2 + fmRank.getAscent() / 2); //
-        g2d.drawString(rankDir, width - margin - fmRank.stringWidth(rankDir), cartaAltura / 2 + fmRank.getAscent() / 2); //
-
-        // Nome da carta FORA da carta
-        g2d.setFont(new Font("Arial", Font.BOLD, NAME_FONT_SIZE)); //
-        g2d.setColor(NAME_COLOR); //
-        FontMetrics fmName = g2d.getFontMetrics(); //
-        String nomeCarta = carta.getNome(); //
-        int nomeWidth = fmName.stringWidth(nomeCarta); //
-        int nomeX = width / 2 - nomeWidth / 2; //
-        int nomeY = height - 5; // Posição Y para o nome, na parte inferior do painel total //
-        g2d.drawString(nomeCarta, nomeX, nomeY); //
-
         g2d.dispose();
     }
-
 }
