@@ -3,6 +3,11 @@ package tripletriad.model;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Representa um jogador no jogo Triple Triad.
+ * Cada jogador tem um nome, uma pontuação e uma lista de cartas na mão.
+ */
+
 public class Jogador {
     private String nome;
     private int pontuacao;
@@ -26,14 +31,6 @@ public class Jogador {
         this.pontuacao = pontuacao;
     }
 
-    public void aumentarPontuacao(int pontos) {
-        this.pontuacao += pontos;
-    }
-
-    public void diminuirPontuacao(int pontos) {
-        this.pontuacao -= pontos;
-    }
-
     public void adicionarCarta(Carta carta) {
         cartasNaMao.add(carta);
     }
@@ -44,20 +41,5 @@ public class Jogador {
 
     public List<Carta> getCartasNaMao() {
         return cartasNaMao;
-    }
-
-    public boolean temCartas() {
-        return !cartasNaMao.isEmpty();
-    }
-
-    public void mostrarCartas() {
-        for (int i = 0; i < cartasNaMao.size(); i++) {
-            System.out.println("Carta " + (i + 1) + ":");
-            String[] visual = cartasNaMao.get(i).toStringVisual();
-            for (String linha : visual) {
-                System.out.println(linha);
-            }
-            System.out.println();
-        }
     }
 }

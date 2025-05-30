@@ -4,17 +4,20 @@ import java.io.*;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.nio.charset.StandardCharsets; // Import para UTF-8
+
+/**
+ * Responsável por carregar os dados das cartas de um arquivo CSV.
+ * Após o carregamento, as cartas são embaralhadas e distribuídas
+ * igualmente entre os dois jogadores participantes.
+ */
 
 public class CartaLoader {
     public static void distribuirCartas(String caminhoCSV, Jogador j1, Jogador j2) { //
         List<Carta> cartas = new ArrayList<>();
 
-        // Tentar carregar o CSV com UTF-8 que é mais comum para CSVs.
-        // Se seu arquivo CSV estiver especificamente em UTF-16, reverta para "UTF-16"
         try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(caminhoCSV), "UTF-16"))) {
             String linha;
-            br.readLine(); // pula o cabeçalho
+            br.readLine();
 
             while ((linha = br.readLine()) != null) {
                 linha = linha.trim();
@@ -54,7 +57,6 @@ public class CartaLoader {
                             case "LEFT" -> esquerda = valor;
                         }
                     }
-                    // PASSAR ID PARA O CONSTRUTOR
                     cartas.add(new Carta(id, nome, topo, direita, baixo, esquerda, tipo)); //
 
                 } catch (NumberFormatException e) {
@@ -74,7 +76,7 @@ public class CartaLoader {
 
         // Distribui 5 cartas para cada jogador
         for (int i = 0; i < 5 && cartas.size() >= 2; i++) { //
-            Carta c1 = cartas.removeFirst(); // Use removeFirst se List for LinkedList, ou remove(0) para ArrayList
+            Carta c1 = cartas.removeFirst();
             c1.setDono(j1);
             j1.adicionarCarta(c1);
 
