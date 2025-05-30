@@ -51,6 +51,8 @@ public class Jogo {
         }
     }
 
+    //Metodos Observers que modificam o estado do jogo em tempo real enquanto é jogado
+
     public void addObserver(TripleTriadGUI observer) {
         if (observer != null && !observers.contains(observer)) {
             observers.add(observer);
@@ -85,6 +87,9 @@ public class Jogo {
         return jogador2;
     }
 
+    //Metódo que valida todas as jogados dos jogares e vê se são possiveis
+    //Se o metodo for valido, ele define um dono para carta e aplica a regra de batalha
+
     public boolean tentarJogarCarta(int linha, int coluna, Carta carta, Jogador jogadorQueJogou) {
         if (jogadorQueJogou != jogadorAtual || tabuleiro.getCarta(linha, coluna) != null || carta == null) {
             return false;
@@ -98,6 +103,8 @@ public class Jogo {
         carta.setDono(jogadorQueJogou);
         jogadorQueJogou.removerCarta(carta);
 
+        //Troca de jogador após jogada e verifica se o jogo foi finalizado
+
         virarCartasAdjacentes(linha, coluna, carta, jogadorQueJogou);
 
         jogadorAtual = (jogadorAtual == jogador1) ? jogador2 : jogador1;
@@ -110,6 +117,8 @@ public class Jogo {
         }
         return true;
     }
+
+    //Metodo que pega e compara as cartas para atualizar a pontuação
 
     private void virarCartasAdjacentes(int linha, int coluna, Carta cartaJogada, Jogador jogadorQueJogou) {
         int[] dr = {-1, 1, 0, 0}; // Deslocamento nas linhas: Cima, Baixo, Mesmo, Mesmo
@@ -138,6 +147,8 @@ public class Jogo {
         atualizarPlacarComBaseNoTabuleiro(); // Atualiza o placar após todas as possíveis viradas da jogada
     }
 
+    //Calcula a pontuação de cada jogador somando as cartas na mão com as do tabuleiro
+
     private void atualizarPlacarComBaseNoTabuleiro() {
         if (jogador1 == null || jogador2 == null || tabuleiro == null) return;
 
@@ -162,6 +173,8 @@ public class Jogo {
         jogador1.setPontuacao(pontuacaoJ1);
         jogador2.setPontuacao(pontuacaoJ2);
     }
+
+    //Confere se o tabuleiro está cheio, se sim, o jogo finaliza e ele traz o efeito sonoro de vitória caso um jogador ganhe
 
     public boolean jogoFinalizado() {
         if (tabuleiro == null) return true;
