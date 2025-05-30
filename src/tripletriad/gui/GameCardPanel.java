@@ -13,6 +13,16 @@ import java.io.IOException;
 import java.net.URL;
 import javax.imageio.ImageIO;
 
+/**
+ * Um painel customizado (JPanel) projetado para exibir uma única carta do jogo Triple Triad.
+ * Este painel é responsável por:
+ * - Desenhar a carta, seja virada para cima (mostrando arte, ranks, nome) ou virada para baixo.
+ * - Indicar visualmente a qual jogador uma carta no tabuleiro pertence (através de uma tintura de cor).
+ * - Lidar com interações do mouse, como cliques para selecionar uma carta na mão do jogador
+ * ou para tentar jogar uma carta em um slot do tabuleiro.
+ * Utiliza `ImageCache` para carregar eficientemente as imagens das cartas.
+ */
+
 public class GameCardPanel extends JPanel {
 
     private Carta carta;
@@ -48,7 +58,7 @@ public class GameCardPanel extends JPanel {
 
         setPreferredSize(preferredSize);
         setOpaque(false);
-        loadImages(); // Carrega imagens baseadas na carta inicial (pode ser null)
+        loadImages();
 
         if (this.guiInstance != null) {
             addMouseListener(new MouseAdapter() {
@@ -70,16 +80,12 @@ public class GameCardPanel extends JPanel {
         this(carta, preferredSize, isFaceDown, null, false, -1, -1);
     }
 
-    // MÉTODO MOVIDO PARA FORA E CORRIGIDO
     public void definirCarta(Carta novaCarta) {
         this.carta = novaCarta;
         loadImages(); // Sempre chama loadImages; o cache cuidará da eficiência.
         repaint();
     }
 
-    // MÉTODO MOVIDO PARA FORA E CORRIGIDO
-    // O nome do parâmetro 'jogadorDestaGui' está correto aqui se você o usa com esse nome dentro do método.
-    // A classe TripleTriadGUI passa 'this.jogador' para este parâmetro.
     public void definirDestaqueSelecao(boolean selecionado, Jogador jogadorDestaGui, Jogo jogo) {
         if (selecionado && this.carta != null && jogadorDestaGui != null && jogo != null && jogo.getJogador1() != null && jogo.getJogador2() != null) {
             if (jogadorDestaGui == jogo.getJogador1()) {
@@ -87,12 +93,12 @@ public class GameCardPanel extends JPanel {
             } else if (jogadorDestaGui == jogo.getJogador2()) {
                 setBorder(BorderFactory.createLineBorder(Color.RED, 3));
             } else {
-                setBorder(BorderFactory.createLineBorder(Color.YELLOW, 3)); // Fallback
+                setBorder(BorderFactory.createLineBorder(Color.YELLOW, 3));
             }
         } else {
-            setBorder(null); // Remove borda se não selecionado
+            setBorder(null);
         }
-        repaint(); // Pede repaint para mostrar/remover a borda
+        repaint();
     }
 
 
@@ -101,14 +107,11 @@ public class GameCardPanel extends JPanel {
     }
 
     private void loadImages() {
-        // Carrega a imagem de fundo da carta usando o cache
         this.cardBackgroundImage = ImageCache.getCardBackgroundImage();
         if (this.cardBackgroundImage == null) {
             System.err.println("Falha ao carregar imagem de fundo da carta do cache.");
-            // Você pode definir uma cor de fundo sólida como fallback aqui se desejar
         }
 
-        // Reseta a imagem do monstro antes de tentar carregar uma nova
         this.monsterImage = null;
         if (this.carta != null && !this.isFaceDown) {
             String monsterImagePath = "/resources/images/card_art/monsters/" + formatCardId(this.carta.getId()) + ".png";

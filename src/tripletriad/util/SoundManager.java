@@ -11,6 +11,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ThreadFactory;
 
+/**
+ * Gerencia o carregamento e a reprodução de efeitos sonoros e música de tema para o jogo.
+ * Implementa o padrão Singleton para garantir uma única instância de gerenciamento de som.
+ * As operações de som (carregamento, reprodução) são executadas em uma thread separada
+ * usando um ExecutorService para evitar o bloqueio da thread principal da aplicação (ex: EDT do Swing).
+ */
+
 public class SoundManager {
 
     private static SoundManager instance;
@@ -28,7 +35,6 @@ public class SoundManager {
     });
 
     private SoundManager() {
-        // Pre-load all sounds
         for (SoundEffect effect : SoundEffect.values()) {
             loadSound(effect);
         }
@@ -42,7 +48,6 @@ public class SoundManager {
     }
 
     private void loadSound(SoundEffect effect) {
-        // Submitted to executor to avoid blocking constructor if a sound takes time
         soundExecutor.submit(() -> {
             try {
                 URL soundURL = SoundManager.class.getResource(effect.getFileName());
@@ -54,7 +59,6 @@ public class SoundManager {
                 Clip clip = AudioSystem.getClip();
                 clip.open(audioIn);
                 soundClips.put(effect, clip);
-                // System.out.println("Loaded sound: " + effect.getFileName());
             } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
                 System.err.println("Error loading sound " + effect.getFileName() + ": " + e.getMessage());
             }
@@ -68,12 +72,11 @@ public class SoundManager {
                 if (clip.isRunning()) {
                     clip.stop();
                 }
-                clip.setFramePosition(0); // Rewind to the beginning
+                clip.setFramePosition(0);
                 clip.start();
             } else {
                 System.err.println("Sound not loaded or clip is null for: " + effect.getFileName() + ". Attempting to reload.");
-                loadSound(effect); // Attempt to load it if it wasn't (e.g. due to earlier error)
-                // You could try playing it again after a short delay if needed, but for now, just reload.
+                loadSound(effect);
             }
         });
     }
@@ -122,7 +125,6 @@ public class SoundManager {
                 currentThemeClip.stop();
             }
             currentThemeClip = null;
-            // System.out.println("All sounds stopped.");
         });
     }
 
@@ -149,23 +151,17 @@ public class SoundManager {
             themeStartClip.setFramePosition(0);
             currentThemeClip = themeStartClip;
 
-            // Remove o listener de transição anterior específico, se existir
             if (this.themeTransitionListener != null) {
                 themeStartClip.removeLineListener(this.themeTransitionListener);
             }
 
-            // Cria e define o novo listener de transição
             this.themeTransitionListener = event -> {
                 if (event.getType() == LineEvent.Type.STOP) {
-                    // Verifica se parou naturalmente e não foi interrompido manualmente ou substituído
-                    // E se o evento é do clipe que esperamos (themeStartClip)
                     if (currentThemeClip == themeStartClip &&
                             themeStartClip.getFramePosition() >= themeStartClip.getFrameLength() - 20 && /* Tolerância */
                             event.getSource() == themeStartClip) {
 
-                        // System.out.println("THEME_START finished, starting THEME_LOOP.");
                         if (themeLoopClip != null) {
-                            // O themeTransitionListener será substituído na próxima chamada a playThemeSequence se necessário.
                             loopSound(SoundEffect.THEME_LOOP, true);
                         } else {
                             System.err.println("THEME_LOOP not loaded, cannot switch.");
@@ -177,7 +173,6 @@ public class SoundManager {
 
             themeStartClip.addLineListener(this.themeTransitionListener);
             themeStartClip.start();
-            // System.out.println("Playing THEME_START.");
         });
     }
 
@@ -191,6 +186,5 @@ public class SoundManager {
             soundExecutor.shutdownNow();
             Thread.currentThread().interrupt();
         }
-        // System.out.println("SoundManager executor shut down.");
     }
 }

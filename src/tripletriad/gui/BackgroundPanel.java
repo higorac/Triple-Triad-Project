@@ -6,14 +6,19 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 import java.net.URL;
 
+/**
+ * Um JPanel customizado que desenha uma imagem de fundo.
+ * A imagem é carregada a partir de um caminho de recurso especificado
+ * e é redimensionada para preencher todo o painel.
+ */
+
 public class BackgroundPanel extends JPanel {
 
     private Image backgroundImage;
 
-    public BackgroundPanel(String imagePath) { // imagePath will be "/resources/images/back.png"
-        // Tenta carregar a imagem do classpath (deve estar na pasta resources)
+    public BackgroundPanel(String imagePath) {
         try {
-            URL imageUrl = getClass().getResource(imagePath); // Use the provided imagePath directly
+            URL imageUrl = getClass().getResource(imagePath);
             if (imageUrl == null) {
                 System.err.println("Recurso de imagem não encontrado: " + imagePath);
                 setBackground(Color.DARK_GRAY);
@@ -29,9 +34,8 @@ public class BackgroundPanel extends JPanel {
 
     @Override
     protected void paintComponent(Graphics g) {
-        super.paintComponent(g); // Importante para limpar o painel antes de desenhar
+        super.paintComponent(g);
         if (backgroundImage != null) {
-            // Desenha a imagem para cobrir todo o painel
             g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
         }
     }

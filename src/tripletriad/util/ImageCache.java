@@ -7,14 +7,20 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Gerencia um cache de imagens para otimizar o desempenho, evitando
+ * carregamentos repetidos de imagens do disco.
+ * Utiliza um HashMap para armazenar as instâncias de Image já carregadas,
+ * usando o caminho do recurso da imagem como chave.
+ * Esta classe segue um padrão de utilidade estática.
+ */
+
 public class ImageCache {
-    // O cache para armazenar as imagens. A chave pode ser o caminho do recurso da imagem.
     private static Map<String, Image> cache = new HashMap<>();
 
-    // Imagem de fundo padrão, carregada uma vez
+    // Imagem de fundo padrão
     private static Image defaultCardBackground = null;
 
-    // Método para obter uma imagem do cache ou carregá-la se não existir
     public static Image getImage(String resourcePath) {
         if (resourcePath == null || resourcePath.isEmpty()) {
             return null;
@@ -42,7 +48,6 @@ public class ImageCache {
         }
     }
 
-    // Método específico para obter a imagem de fundo da carta, garantindo que seja carregada apenas uma vez
     public static Image getCardBackgroundImage() {
         if (defaultCardBackground == null) {
             defaultCardBackground = getImage("/resources/images/card_art/card_bg.png");

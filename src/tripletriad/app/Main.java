@@ -8,6 +8,15 @@ import tripletriad.util.SoundEffect;
 import tripletriad.util.SoundManager;
 import javax.swing.SwingUtilities;
 
+/**
+ * Classe principal da aplicação Triple Triad.
+ * Responsável por:
+ * - Iniciar a aplicação e o primeiro jogo.
+ * - Gerenciar instâncias globais como jogadores, o jogo atual e as interfaces gráficas (GUIs) de cada jogador.
+ * - Coordenar o processo de reinício do jogo, que requer a confirmação de ambos os jogadores.
+ * - Gerenciar o ciclo de vida do `SoundManager`.
+ */
+
 public class Main {
 
     private static SoundManager soundManager;
